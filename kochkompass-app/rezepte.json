@@ -1,0 +1,35 @@
+{
+ "recipes": [
+  {
+   "name": "Quark-Haferpfannkuchen",
+   "meal": "fruehstueck",
+   "protein": "ei",
+   "prep": 10,
+   "total": 15,
+   "servings": 1,
+   "devices": [
+    "herd"
+   ],
+   "tags": [
+    "schnell",
+    "training"
+   ],
+   "ingredients": [
+    "60 g Haferflocken",
+    "2 Stk. Eier",
+    "125 g Magertopfen",
+    "1 Stk. Banane",
+    "1 TL Backpulver",
+    "0.5 EL Olivenöl",
+    "100 g Beerenmischung (TK)"
+   ],
+   "steps": [
+    "Haferflocken im Mixer fein mahlen. Mit Eiern, Topfen, Banane und Backpulver zu einem glatten Teig mixen.",
+    "Öl in einer Pfanne bei mittlerer Hitze erhitzen und den Teig in 2–3 Portionen einfüllen.",
+    "Pro Seite 3 Min. goldbraun backen.",
+    "Mit aufgetauten Beeren servieren."
+   ],
+   "tip": "Das ist ein Beispiel für rezepte.json. Kopiere den Block und ändere ihn für neue Rezepte."
+  }
+ ]
+}

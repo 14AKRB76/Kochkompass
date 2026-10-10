@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kochkompass</title>
+<meta name="theme-color" content="#D2480F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>:root{color-scheme:light dark}html,body{margin:0}body{font-size:16px}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px)}</style>
+</head><body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Einkaufszettel am Handy, unten feste Tab-Leiste; Kochansicht als Vollbild-Overlay */
+:root {
+  --bg: #EEF2EC;
+  --surface: #FFFFFF;
+  --surface-2: #E3E9E0;
+  --ink: #17201A;
+  --muted: #56655A;
+  --line: #CFD8CB;
+  --accent: #D2480F;
+  --accent-soft: #FBE3D6;
+  --accent-ink: #FFFFFF;
+  --green: #2D7A4C;
+  --green-soft: #DCEFE2;
+  --warn: #9A6410;
+  --warn-soft: #F7EBCF;
+  --danger: #B42318;
+  --fish: #2463A8;
+  --meat: #9E3434;
+  --shadow: 0 1px 2px rgba(23,32,26,.06), 0 6px 18px rgba(23,32,26,.07);
+  --f-display: "Bricolage Grotesque", "Avenir Next Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1411; --surface: #171E19; --surface-2: #212A23; --ink: #E5ECE3; --muted: #9AA99D; --line: #2D3830;
+    --accent: #FF7A3D; --accent-soft: #3A2117; --accent-ink: #1C0D05; --green: #5DC38B; --green-soft: #183223;
+    --warn: #E3AD52; --warn-soft: #33280F; --danger: #F07167; --fish: #74A9E6; --meat: #E58080;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1411; --surface: #171E19; --surface-2: #212A23; --ink: #E5ECE3; --muted: #9AA99D; --line: #2D3830;
+  --accent: #FF7A3D; --accent-soft: #3A2117; --accent-ink: #1C0D05; --green: #5DC38B; --green-soft: #183223;
+  --warn: #E3AD52; --warn-soft: #33280F; --danger: #F07167; --fish: #74A9E6; --meat: #E58080;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 800; letter-spacing: -.01em; text-wrap: balance; margin: 0; line-height: 1.1; }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 110px; display: flex; flex-direction: column; gap: 18px; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.top h1 { font-size: 30px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Segment & Chips */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg button { border: 0; background: transparent; padding: 10px 8px; border-radius: 9px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; margin-inline: -16px; padding-inline: 16px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 14px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.chip svg { width: 16px; height: 16px; }
+
+/* Karten */
+.card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sugg h3 { font-size: 22px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); align-items: center; }
+.meta span { display: inline-flex; align-items: center; gap: 5px; }
+.meta svg { width: 16px; height: 16px; }
+.macros { display: grid; grid-template-columns: repeat(4, 1fr); border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+.macros div { padding: 6px 4px; text-align: center; border-left: 1.5px solid var(--line); }
+.macros div:first-child { border-left: 0; }
+.macros b { display: block; font-family: var(--f-display); font-size: 19px; font-variant-numeric: tabular-nums; }
+.macros small { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.macros .p { background: var(--green-soft); }
+.macros .p b { color: var(--green); }
+.why { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.why li { display: flex; gap: 8px; align-items: baseline; }
+.why li::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); transform: translateY(-1px); }
+.why li.g::before { background: var(--green); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { border: 0; border-radius: 11px; padding: 12px 16px; font-weight: 700; background: var(--surface-2); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.dark { background: var(--ink); color: var(--bg); }
+.btn.ghost { background: transparent; border: 1.5px solid var(--line); }
+.btn.grow { flex: 1 1 0; }
+.btn.sm { min-height: 36px; padding: 7px 12px; font-size: 14px; border-radius: 9px; }
+.btn svg { width: 18px; height: 18px; }
+.linkbtn { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 6px 0; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.tag.veg { background: var(--green-soft); color: var(--green); }
+.tag.fisch { color: var(--fish); }
+.tag.fleisch { color: var(--meat); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.hot { background: var(--accent-soft); color: var(--accent); }
+
+/* Fortschritt */
+.bar { height: 10px; background: var(--surface-2); border-radius: 99px; position: relative; overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--green); border-radius: 99px; }
+.bar .zone { position: absolute; top: 0; bottom: 0; border-left: 2px solid var(--ink); opacity: .35; }
+
+/* Listen */
+.list { display: flex; flex-direction: column; }
+.li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-width: 0; }
+.li:first-child { border-top: 0; }
+.li .grow { flex: 1; min-width: 0; }
+.li .name { font-weight: 700; overflow-wrap: anywhere; }
+.li .sub { font-size: 13px; color: var(--muted); }
+.check { flex: none; width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; padding: 0; }
+.check svg { width: 18px; height: 18px; opacity: 0; color: var(--accent-ink); }
+.check[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
+.check[aria-checked="true"] svg { opacity: 1; }
+.li.done .name { text-decoration: line-through; color: var(--muted); }
+.dept { font-family: var(--f-display); font-weight: 800; font-size: 15px; margin-top: 6px; display: flex; justify-content: space-between; }
+.iconbtn { flex: none; border: 0; background: var(--surface-2); width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; padding: 0; color: var(--muted); }
+.iconbtn svg { width: 18px; height: 18px; }
+.stepper { display: inline-flex; align-items: center; background: var(--surface-2); border-radius: 10px; }
+.stepper button { border: 0; background: none; width: 36px; height: 36px; font-size: 20px; font-weight: 700; }
+.stepper b { min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+.empty { text-align: center; padding: 26px 10px; color: var(--muted); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.empty b { color: var(--ink); font-family: var(--f-display); font-size: 19px; }
+
+/* Rezeptliste */
+.rlist { display: flex; flex-direction: column; gap: 8px; }
+.ritem { display: flex; gap: 12px; align-items: center; background: var(--surface); border-radius: 12px; padding: 12px 14px; border: 0; text-align: left; box-shadow: var(--shadow); width: 100%; }
+.ritem .grow { flex: 1; min-width: 0; }
+.ritem .name { font-weight: 700; }
+.ritem .pbox { flex: none; text-align: center; min-width: 52px; }
+.ritem .pbox b { display: block; font-family: var(--f-display); font-size: 20px; color: var(--green); font-variant-numeric: tabular-nums; }
+.ritem .pbox small { font-size: 11px; color: var(--muted); font-weight: 700; }
+.search { width: 100%; border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; }
+.stars { display: inline-flex; gap: 2px; }
+.stars button { border: 0; background: none; padding: 4px; color: var(--line); }
+.stars button[aria-pressed="true"] { color: var(--accent); }
+.stars svg { width: 26px; height: 26px; }
+
+/* Wochenwerte */
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.stat { background: var(--surface); border-radius: 12px; padding: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px; border-left: 5px solid var(--line); }
+.stat.ok { border-left-color: var(--green); }
+.stat.warn { border-left-color: var(--warn); }
+.stat.bad { border-left-color: var(--danger); }
+.stat b { font-family: var(--f-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.day { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); align-items: start; }
+.day:first-child { border-top: 0; }
+.day .d { font-family: var(--f-display); font-weight: 800; line-height: 1.1; }
+.day .d small { display: block; font-family: var(--f-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+
+/* Navigation */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 20; }
+nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+nav.tabs button { border: 0; background: none; padding: 9px 2px 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--muted); position: relative; }
+nav.tabs button svg { width: 24px; height: 24px; }
+nav.tabs button[aria-current="page"] { color: var(--accent); }
+nav.tabs .badge { position: absolute; top: 4px; left: calc(50% + 6px); background: var(--accent); color: var(--accent-ink); font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; padding: 0 4px; }
+
+/* Overlays */
+.ov { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; }
+.ov .wrap { padding-bottom: 130px; }
+.ovhead { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); max-width: 560px; margin: 0 auto; }
+.ovhead h2 { font-size: 19px; flex: 1; min-width: 0; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--surface); border-top: 1px solid var(--line); padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.dock .in { max-width: 528px; margin: 0 auto; display: flex; gap: 10px; }
+.steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: s; }
+.steps li { background: var(--surface); border-radius: var(--r); padding: 16px 16px 16px 58px; position: relative; font-size: 19px; line-height: 1.5; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.steps li::before { counter-increment: s; content: counter(s); position: absolute; left: 14px; top: 14px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--bg); font-family: var(--f-display); font-weight: 800; display: grid; place-items: center; font-size: 17px; }
+.steps li.done { opacity: .5; }
+.steps li.done::before { background: var(--green); content: "✓"; }
+.timerbar { position: fixed; left: 0; right: 0; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column-reverse; gap: 6px; align-items: center; pointer-events: none; }
+.timer { pointer-events: auto; background: var(--ink); color: var(--bg); border-radius: 999px; padding: 8px 10px 8px 16px; display: flex; gap: 10px; align-items: center; font-weight: 700; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; }
+.timer.ring { background: var(--accent); color: var(--accent-ink); animation: pulse 1s infinite; }
+.timer button { border: 0; background: rgba(127,127,127,.25); color: inherit; border-radius: 999px; padding: 4px 10px; font-weight: 700; }
+@keyframes pulse { 50% { transform: scale(1.05); } }
+@media (prefers-reduced-motion: reduce) { .timer.ring { animation: none; } }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; min-width: 0; }
+.field input, .field select, .field textarea { border: 1.5px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; font-weight: 400; font-size: 16px; width: 100%; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 700; z-index: 80; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+.note { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.note.g { background: var(--green-soft); }
+.ingtable { display: flex; flex-direction: column; }
+.ingtable .li { padding: 9px 0; }
+.ingtable .amt { flex: none; width: 92px; font-weight: 700; font-variant-numeric: tabular-nums; }
+textarea { resize: vertical; }
+details summary { cursor: pointer; font-weight: 700; }
+</style>
+
+<div id="app"></div>
+<div id="ov"></div>
+<div id="timers" class="timerbar" aria-live="polite"></div>
+<nav class="tabs" id="nav"></nav>
+
+<script type="application/json" id="db">{"recipes": [{"id": "porridge", "name": "Protein-Porridge mit Beeren", "meal": "fruehstueck", "devices": ["herd"], "prep": 5, "total": 8, "servings": 1, "protein": "milch", "cuisine": "fruehstueck", "tags": ["schnell", "training"], "ings": [{"k": "hafer", "a": 60}, {"k": "milch", "a": 200}, {"k": "skyr", "a": 100}, {"k": "beeren", "a": 100}, {"k": "walnuss", "a": 10}, {"k": "zimt", "a": 0.5}], "steps": [{"t": "Haferflocken mit Milch und einer Prise Salz aufkochen, dann bei kleiner Hitze unter Rühren köcheln lassen.", "timer": 4}, {"t": "Vom Herd nehmen, kurz abkühlen lassen und den Skyr einrühren (nicht mehr kochen, sonst flockt er)."}, {"t": "Beeren kurz in der Mikrowelle oder im Topf antauen, mit gehackten Walnüssen und Zimt darüber geben."}], "tip": "Mit einer halben Banane wird's süßer, ohne Zucker.", "n": {"kcal": 485, "p": 28, "c": 57, "f": 14}, "veg": 0, "cheese": 0}, {"id": "oats-skyr", "name": "Overnight Oats Skyr-Beere", "meal": "fruehstueck", "devices": [], "prep": 5, "total": 5, "servings": 1, "protein": "milch", "cuisine": "fruehstueck", "tags": ["vorbereiten", "schnell"], "ings": [{"k": "hafer", "a": 50}, {"k": "skyr", "a": 150}, {"k": "milch", "a": 100}, {"k": "chia", "a": 10}, {"k": "beeren", "a": 100}, {"k": "honig", "a": 1}], "steps": [{"t": "Haferflocken, Chiasamen, Skyr, Milch und Honig in einem Glas verrühren."}, {"t": "Gefrorene Beeren obendrauf geben – sie tauen über Nacht auf."}, {"t": "Verschlossen über Nacht (mind. 4 Std.) in den Kühlschrank stellen. Morgens umrühren, fertig."}], "tip": "Hält 2 Tage im Kühlschrank – gleich zwei Gläser machen.", "n": {"kcal": 436, "p": 29, "c": 54, "f": 9}, "veg": 0, "cheese": 0}, {"id": "oats-pb", "name": "Overnight Oats Erdnuss-Banane", "meal": "fruehstueck", "devices": [], "prep": 5, "total": 5, "servings": 1, "protein": "milch", "cuisine": "fruehstueck", "tags": ["vorbereiten", "schnell", "training"], "ings": [{"k": "hafer", "a": 50}, {"k": "topfen", "a": 100}, {"k": "milch", "a": 150}, {"k": "erdnussmus", "a": 15}, {"k": "banane", "a": 1}, {"k": "zimt", "a": 0.5}], "steps": [{"t": "Haferflocken, Topfen, Milch, Erdnussmus und Zimt in einem Glas glatt verrühren."}, {"t": "Banane in Scheiben schneiden, die Hälfte unterrühren, Rest obendrauf."}, {"t": "Über Nacht in den Kühlschrank stellen."}], "tip": "", "n": {"kcal": 524, "p": 29, "c": 67, "f": 14}, "veg": 0, "cheese": 0}, {"id": "avo-toast", "name": "Avocado-Spiegelei-Toast", "meal": "fruehstueck", "devices": ["herd"], "prep": 10, "total": 10, "servings": 1, "protein": "ei", "cuisine": "fruehstueck", "tags": ["schnell"], "ings": [{"k": "toast", "a": 2}, {"k": "avocado", "a": 0.5}, {"k": "huettenkaese", "a": 50}, {"k": "eier", "a": 2}, {"k": "cherry", "a": 80}, {"k": "zitrone", "a": 0.25}, {"k": "chili", "a": 1}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Toast toasten. Avocado mit Zitronensaft, Salz und Pfeffer zerdrücken, Hüttenkäse unterrühren."}, {"t": "Öl in der Pfanne erhitzen, Eier hineinschlagen und bei mittlerer Hitze braten, bis das Eiweiß fest ist.", "timer": 4}, {"t": "Avocadocreme auf den Toast streichen, Ei drauf, halbierte Cherrytomaten und Chiliflocken dazu."}], "tip": "", "n": {"kcal": 545, "p": 29, "c": 31, "f": 32}, "veg": 155, "cheese": 0}, {"id": "smoothie-banane", "name": "Bananen-Hafer-Topfen-Smoothie", "meal": "fruehstueck", "devices": ["mixer"], "prep": 5, "total": 5, "servings": 1, "protein": "milch", "cuisine": "fruehstueck", "tags": ["schnell", "training"], "ings": [{"k": "banane", "a": 1}, {"k": "topfen", "a": 125}, {"k": "milch", "a": 250}, {"k": "hafer", "a": 30}, {"k": "erdnussmus", "a": 10}, {"k": "zimt", "a": 0.5}], "steps": [{"t": "Alles in den Mixer geben."}, {"t": "30–60 Sekunden auf höchster Stufe mixen, bis es cremig ist. Bei Bedarf etwas Wasser dazu."}], "tip": "Mit gefrorener Banane wird's ein Milkshake.", "n": {"kcal": 485, "p": 31, "c": 60, "f": 12}, "veg": 0, "cheese": 0}, {"id": "smoothie-beere", "name": "Beeren-Spinat-Smoothie", "meal": "fruehstueck", "devices": ["mixer"], "prep": 5, "total": 5, "servings": 1, "protein": "milch", "cuisine": "fruehstueck", "tags": ["schnell"], "ings": [{"k": "beeren", "a": 150}, {"k": "spinat", "a": 30}, {"k": "skyr", "a": 150}, {"k": "milch", "a": 200}, {"k": "hafer", "a": 20}, {"k": "banane", "a": 0.5}], "steps": [{"t": "Alles in den Mixer geben (Beeren direkt gefroren)."}, {"t": "Gut durchmixen, bis kein Spinat mehr zu sehen ist."}], "tip": "Den Spinat schmeckt man nicht – gutes Gemüse zum Frühstück.", "n": {"kcal": 384, "p": 29, "c": 50, "f": 5}, "veg": 30, "cheese": 0}, {"id": "eier-wrap", "name": "Rührei-Bohnen-Wrap", "meal": "fruehstueck", "devices": ["herd"], "prep": 10, "total": 12, "servings": 1, "protein": "ei", "cuisine": "mex", "tags": ["schnell", "training"], "ings": [{"k": "wraps", "a": 1}, {"k": "eier", "a": 3}, {"k": "schwarzebohnen", "a": 60}, {"k": "paprika", "a": 0.5}, {"k": "spinat", "a": 30}, {"k": "kreuzkuemmel", "a": 0.5}, {"k": "chili", "a": 1}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Paprika klein würfeln und im Öl 2 Minuten anbraten. Bohnen abspülen und dazugeben."}, {"t": "Eier verquirlen, mit Salz, Pfeffer und Kreuzkümmel würzen, in die Pfanne geben und unter Rühren stocken lassen. Spinat unterheben.", "timer": 3}, {"t": "Wrap kurz in der trockenen Pfanne erwärmen, füllen und einrollen."}], "tip": "Bohnen-Rest: ab in den nächsten Burrito-Bowl oder ins Chili.", "n": {"kcal": 567, "p": 33, "c": 43, "f": 27}, "veg": 110, "cheese": 0}, {"id": "bananenbrot", "name": "Protein-Bananenbrot", "meal": "snack", "devices": ["ofen", "mixer"], "prep": 15, "total": 70, "servings": 8, "protein": "milch", "cuisine": "suess", "tags": ["vorbereiten"], "ings": [{"k": "banane", "a": 3}, {"k": "eier", "a": 3}, {"k": "skyr", "a": 150}, {"k": "hafer", "a": 150}, {"k": "mehl", "a": 50}, {"k": "backpulver", "a": 2}, {"k": "honig", "a": 4}, {"k": "walnuss", "a": 30}, {"k": "zimt", "a": 1}], "steps": [{"t": "Backrohr auf 180 °C Ober-/Unterhitze vorheizen. Haferflocken im Mixer zu Mehl mahlen."}, {"t": "Bananen zerdrücken, mit Eiern, Skyr und Honig verrühren."}, {"t": "Hafermehl, Vollkornmehl, Backpulver, Zimt und eine Prise Salz unterrühren, gehackte Walnüsse unterheben."}, {"t": "Teig in eine mit Backpapier ausgelegte Kastenform füllen und backen, bis ein Holzspieß sauber herauskommt.", "timer": 50}, {"t": "Auskühlen lassen und in 8 Scheiben schneiden."}], "tip": "Scheiben einzeln einfrieren und morgens antoasten. Je reifer die Bananen, desto süßer.", "n": {"kcal": 210, "p": 9, "c": 28, "f": 6}, "veg": 0, "cheese": 0}, {"id": "hummus", "name": "Protein-Hummus", "meal": "snack", "devices": ["mixer"], "prep": 10, "total": 10, "servings": 4, "protein": "huelsen", "cuisine": "orient", "tags": ["vorbereiten", "schnell"], "ings": [{"k": "kichererbsen", "a": 240}, {"k": "tahini", "a": 30}, {"k": "skyr", "a": 100}, {"k": "zitrone", "a": 1}, {"k": "knoblauch", "a": 1}, {"k": "oel", "a": 1.5}, {"k": "kreuzkuemmel", "a": 0.5}], "steps": [{"t": "Kichererbsen abgießen und abspülen."}, {"t": "Mit Tahini, Skyr, Zitronensaft, Knoblauch, Kreuzkümmel, Salz und 2–3 EL kaltem Wasser im Mixer 1–2 Minuten sehr fein pürieren."}, {"t": "Mit Olivenöl beträufeln. Dazu Gemüsesticks oder Vollkornbrot."}], "tip": "Hält 4 Tage im Kühlschrank.", "n": {"kcal": 170, "p": 9, "c": 12, "f": 10}, "veg": 0, "cheese": 0}, {"id": "hummus-paprika", "name": "Paprika-Hummus", "meal": "snack", "devices": ["hlf", "mixer"], "prep": 10, "total": 25, "servings": 4, "protein": "huelsen", "cuisine": "orient", "tags": ["vorbereiten"], "ings": [{"k": "kichererbsen", "a": 240}, {"k": "paprika", "a": 1}, {"k": "tahini", "a": 20}, {"k": "zitrone", "a": 0.5}, {"k": "knoblauch", "a": 1}, {"k": "paprikapulver", "a": 1}, {"k": "oel", "a": 1}], "steps": [{"t": "Paprika vierteln und in der Heißluftfritteuse bei 200 °C rösten, bis die Haut Blasen wirft.", "timer": 12}, {"t": "Kichererbsen abspülen. Mit Paprika, Tahini, Zitronensaft, Knoblauch, Paprikapulver, Öl und Salz fein pürieren."}, {"t": "Abschmecken, bei Bedarf 1–2 EL Wasser zugeben."}], "tip": "", "n": {"kcal": 139, "p": 6, "c": 12, "f": 7}, "veg": 40, "cheese": 0}, {"id": "kuerbissuppe", "name": "Kürbiscremesuppe mit roten Linsen", "meal": "haupt", "devices": ["herd", "mixer"], "prep": 15, "total": 35, "servings": 3, "protein": "huelsen", "cuisine": "heim", "tags": ["vorbereiten", "einfrieren"], "ings": [{"k": "kuerbis", "a": 800}, {"k": "linsen", "a": 200}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "ingwer", "a": 15}, {"k": "kokosmilch", "a": 200}, {"k": "bruehe", "a": 3}, {"k": "currypulver", "a": 1}, {"k": "skyr", "a": 150}, {"k": "broetchen", "a": 3}], "steps": [{"t": "Kürbis waschen (Hokkaido muss nicht geschält werden), entkernen und würfeln. Zwiebel, Knoblauch und Ingwer hacken."}, {"t": "Zwiebel, Knoblauch und Ingwer in einem großen Topf mit etwas Öl 2 Minuten anschwitzen, Currypulver kurz mitrösten."}, {"t": "Kürbis, Linsen, Brühpulver und ca. 1 Liter Wasser dazu, aufkochen und zugedeckt köcheln lassen.", "timer": 20}, {"t": "Kokosmilch zugeben und mit dem Mixer (oder Stabmixer) fein pürieren. Mit Salz, Pfeffer und etwas Zitrone abschmecken."}, {"t": "Mit einem Klecks Skyr servieren, Vollkornbrötchen dazu."}], "tip": "Friert super ein. Rest-Kürbis eignet sich fürs Kürbisrisotto oder Ofengemüse.", "n": {"kcal": 638, "p": 33, "c": 95, "f": 11}, "veg": 305, "cheese": 0}, {"id": "tomatensuppe", "name": "Tomaten-Linsen-Suppe", "meal": "haupt", "devices": ["herd", "mixer"], "prep": 10, "total": 30, "servings": 2, "protein": "huelsen", "cuisine": "heim", "tags": ["vorbereiten", "einfrieren"], "ings": [{"k": "linsen", "a": 150}, {"k": "tomatendose", "a": 400}, {"k": "karotte", "a": 2}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "bruehe", "a": 2}, {"k": "paprikapulver", "a": 1}, {"k": "kreuzkuemmel", "a": 0.5}, {"k": "joghurt", "a": 100}, {"k": "feta", "a": 40}, {"k": "broetchen", "a": 2}], "steps": [{"t": "Zwiebel, Knoblauch und Karotten klein schneiden und in etwas Öl 3 Minuten anbraten."}, {"t": "Linsen, Tomaten, Gewürze, Brühpulver und 700 ml Wasser dazu, aufkochen und köcheln lassen, bis die Linsen weich sind.", "timer": 18}, {"t": "Pürieren (oder stückig lassen) und abschmecken."}, {"t": "Mit Joghurt und zerbröseltem Feta servieren, Brötchen dazu."}], "tip": "", "n": {"kcal": 613, "p": 34, "c": 91, "f": 9}, "veg": 130, "cheese": 20}, {"id": "brokkolisuppe", "name": "Brokkoli-Erbsen-Cremesuppe", "meal": "haupt", "devices": ["herd", "mixer"], "prep": 10, "total": 30, "servings": 2, "protein": "huelsen", "cuisine": "heim", "tags": ["vorbereiten"], "ings": [{"k": "brokkoli", "a": 400}, {"k": "erbsen", "a": 200}, {"k": "kartoffeln", "a": 200}, {"k": "weissebohnen", "a": 250}, {"k": "zwiebel", "a": 1}, {"k": "milch", "a": 150}, {"k": "bruehe", "a": 2}, {"k": "zitrone", "a": 0.5}, {"k": "eier", "a": 2}], "steps": [{"t": "Eier 9 Minuten hart kochen.", "timer": 9}, {"t": "Zwiebel hacken, Kartoffeln schälen und würfeln, Brokkoli in Röschen teilen (Strunk schälen und mitverwenden)."}, {"t": "Zwiebel in etwas Öl anschwitzen, Kartoffeln, Brokkoli, Brühpulver und 700 ml Wasser dazu und köcheln.", "timer": 12}, {"t": "Erbsen und abgespülte Bohnen zugeben und mitkochen.", "timer": 3}, {"t": "Milch zugeben, fein pürieren, mit Zitronensaft, Salz und Pfeffer abschmecken. Mit gehackten Eiern servieren."}], "tip": "Die Bohnen machen die Suppe cremig – ganz ohne Sahne.", "n": {"kcal": 498, "p": 33, "c": 60, "f": 9}, "veg": 250, "cheese": 0}, {"id": "karottensuppe", "name": "Karotten-Ingwer-Suppe mit Knusper-Kichererbsen", "meal": "haupt", "devices": ["herd", "mixer", "hlf"], "prep": 15, "total": 35, "servings": 2, "protein": "huelsen", "cuisine": "heim", "tags": ["vorbereiten"], "ings": [{"k": "karotte", "a": 6}, {"k": "linsen", "a": 80}, {"k": "kartoffeln", "a": 150}, {"k": "zwiebel", "a": 1}, {"k": "ingwer", "a": 20}, {"k": "kokosmilch", "a": 200}, {"k": "bruehe", "a": 2}, {"k": "kichererbsen", "a": 240}, {"k": "paprikapulver", "a": 1}, {"k": "oel", "a": 1}, {"k": "skyr", "a": 150}], "steps": [{"t": "Karotten, Kartoffeln, Zwiebel und Ingwer schälen und grob schneiden."}, {"t": "Alles mit den Linsen, Brühpulver und 800 ml Wasser aufkochen und köcheln lassen.", "timer": 20}, {"t": "Währenddessen Kichererbsen abspülen, trocken tupfen, mit Öl, Paprikapulver und Salz mischen und in der Heißluftfritteuse bei 200 °C knusprig rösten (zwischendurch schütteln).", "timer": 15}, {"t": "Kokosmilch zur Suppe geben und fein pürieren. Mit Skyr und den Knusper-Kichererbsen servieren."}], "tip": "", "n": {"kcal": 654, "p": 32, "c": 80, "f": 20}, "veg": 300, "cheese": 0}, {"id": "minestrone", "name": "Minestrone mit weißen Bohnen", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 35, "servings": 2, "protein": "huelsen", "cuisine": "ital", "tags": ["vorbereiten", "einfrieren"], "ings": [{"k": "zwiebel", "a": 1}, {"k": "karotte", "a": 2}, {"k": "zucchini", "a": 1}, {"k": "tomatendose", "a": 400}, {"k": "weissebohnen", "a": 250}, {"k": "linsen", "a": 80}, {"k": "nudeln", "a": 100}, {"k": "bruehe", "a": 3}, {"k": "oregano", "a": 1}, {"k": "parmesan", "a": 15, "opt": true}], "steps": [{"t": "Zwiebel, Karotten und Zucchini würfeln. Zwiebel und Karotten in etwas Öl 3 Minuten anbraten."}, {"t": "Tomaten, Linsen, Kräuter, Brühpulver und 1 Liter Wasser dazu, aufkochen und köcheln lassen.", "timer": 10}, {"t": "Nudeln, Zucchini und abgespülte Bohnen zugeben und kochen, bis die Nudeln gar sind.", "timer": 10}, {"t": "Mit Salz und Pfeffer abschmecken. Wer mag, etwas Parmesan drüber."}], "tip": "", "n": {"kcal": 563, "p": 31, "c": 90, "f": 4}, "veg": 255, "cheese": 0}, {"id": "fajitas-huhn", "name": "Hähnchen-Fajitas", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 20, "servings": 1, "protein": "gefluegel", "cuisine": "mex", "tags": ["schnell", "training"], "ings": [{"k": "haehnchen", "a": 150}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 0.5}, {"k": "wraps", "a": 2}, {"k": "skyr", "a": 50}, {"k": "avocado", "a": 0.5}, {"k": "limette", "a": 0.5}, {"k": "paprikapulver", "a": 1}, {"k": "kreuzkuemmel", "a": 0.5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Hähnchen in Streifen schneiden, mit Paprikapulver, Kreuzkümmel, Salz und dem halben Limettensaft mischen."}, {"t": "Paprika und Zwiebel in Streifen schneiden. Avocado mit restlichem Limettensaft und Salz zerdrücken."}, {"t": "Hähnchen im Öl bei hoher Hitze rundum braten, herausnehmen.", "timer": 5}, {"t": "Paprika und Zwiebel in derselben Pfanne bissfest braten, Hähnchen wieder dazu.", "timer": 4}, {"t": "Wraps kurz erwärmen, mit Füllung, Avocado und Skyr (statt Sauerrahm) belegen."}], "tip": "Rest-Hähnchen am nächsten Tag: Teriyaki-Pfanne oder Burrito-Bowl.", "n": {"kcal": 793, "p": 53, "c": 74, "f": 28}, "veg": 285, "cheese": 0}, {"id": "fajitas-bohnen", "name": "Bohnen-Paprika-Fajitas", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 15, "servings": 1, "protein": "huelsen", "cuisine": "mex", "tags": ["schnell"], "ings": [{"k": "schwarzebohnen", "a": 250}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 0.5}, {"k": "mais", "a": 70}, {"k": "wraps", "a": 2}, {"k": "skyr", "a": 80}, {"k": "limette", "a": 0.5}, {"k": "paprikapulver", "a": 1}, {"k": "kreuzkuemmel", "a": 0.5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Paprika und Zwiebel in Streifen schneiden, Bohnen und Mais abspülen."}, {"t": "Paprika und Zwiebel im Öl 4 Minuten braten, Bohnen, Mais und Gewürze dazu und weitere 3 Minuten braten. Ein paar Bohnen leicht zerdrücken.", "timer": 7}, {"t": "Mit Limettensaft und Salz abschmecken. Wraps erwärmen, füllen, Skyr drauf."}], "tip": "", "n": {"kcal": 833, "p": 40, "c": 119, "f": 16}, "veg": 210, "cheese": 0}, {"id": "chili-con-carne", "name": "Chili con Carne (halb Rind, halb Bohnen)", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 45, "servings": 4, "protein": "rot", "cuisine": "mex", "tags": ["vorbereiten", "einfrieren", "training"], "ings": [{"k": "faschiertes", "a": 400}, {"k": "kidney", "a": 250}, {"k": "tomatendose", "a": 400}, {"k": "mais", "a": 140}, {"k": "paprika", "a": 2}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "tomatenmark", "a": 40}, {"k": "kreuzkuemmel", "a": 1}, {"k": "paprikapulver", "a": 2}, {"k": "chili", "a": 2}, {"k": "reis", "a": 240}, {"k": "skyr", "a": 120}], "steps": [{"t": "Zwiebel, Knoblauch und Paprika würfeln."}, {"t": "Faschiertes in einem großen Topf ohne Öl krümelig anbraten. Zwiebel, Knoblauch und Tomatenmark dazu und mitrösten.", "timer": 6}, {"t": "Paprika, Tomaten, Gewürze und 200 ml Wasser dazu, zugedeckt köcheln lassen.", "timer": 20}, {"t": "Bohnen und Mais abspülen, dazugeben und noch einmal köcheln. Inzwischen Reis kochen.", "timer": 10}, {"t": "Abschmecken und mit Reis und einem Klecks Skyr servieren."}], "tip": "Ergibt 4 Portionen – 2 gleich einfrieren. Am 2. Tag schmeckt's noch besser.", "n": {"kcal": 556, "p": 37, "c": 73, "f": 12}, "veg": 105, "cheese": 0}, {"id": "chili-sin-carne", "name": "Chili sin Carne mit Süßkartoffel", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 40, "servings": 3, "protein": "huelsen", "cuisine": "mex", "tags": ["vorbereiten", "einfrieren"], "ings": [{"k": "suesskartoffel", "a": 400}, {"k": "kidney", "a": 250}, {"k": "schwarzebohnen", "a": 250}, {"k": "linsen", "a": 100}, {"k": "tomatendose", "a": 400}, {"k": "mais", "a": 140}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "tomatenmark", "a": 30}, {"k": "kreuzkuemmel", "a": 1}, {"k": "paprikapulver", "a": 2}, {"k": "chili", "a": 2}, {"k": "skyr", "a": 150}, {"k": "limette", "a": 1}], "steps": [{"t": "Zwiebel, Knoblauch, Paprika und Süßkartoffel (geschält) würfeln."}, {"t": "Zwiebel und Knoblauch in etwas Öl anbraten, Tomatenmark und Gewürze 1 Minute mitrösten.", "timer": 3}, {"t": "Süßkartoffel, Linsen, Paprika, Tomaten und 500 ml Wasser dazu, zugedeckt köcheln lassen.", "timer": 20}, {"t": "Abgespülte Bohnen und Mais unterrühren und noch kurz köcheln.", "timer": 5}, {"t": "Mit Limettensaft und Salz abschmecken, Skyr dazu."}], "tip": "", "n": {"kcal": 537, "p": 32, "c": 88, "f": 3}, "veg": 220, "cheese": 0}, {"id": "burrito-bowl", "name": "Burrito Bowl mit Hähnchen", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 20, "servings": 1, "protein": "gefluegel", "cuisine": "mex", "tags": ["training"], "ings": [{"k": "reis", "a": 70}, {"k": "haehnchen", "a": 130}, {"k": "schwarzebohnen", "a": 120}, {"k": "mais", "a": 50}, {"k": "cherry", "a": 80}, {"k": "avocado", "a": 0.5}, {"k": "skyr", "a": 50}, {"k": "limette", "a": 0.5}, {"k": "paprikapulver", "a": 1}, {"k": "kreuzkuemmel", "a": 0.5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Reis nach Packungsangabe kochen.", "timer": 12}, {"t": "Hähnchen würfeln, mit Paprikapulver, Kreuzkümmel und Salz würzen und im Öl durchbraten.", "timer": 6}, {"t": "Bohnen und Mais abspülen und kurz in der Pfanne erwärmen. Tomaten halbieren, Avocado in Spalten schneiden."}, {"t": "Alles nebeneinander auf den Reis legen, Skyr und Limettensaft drüber."}], "tip": "", "n": {"kcal": 764, "p": 53, "c": 85, "f": 20}, "veg": 155, "cheese": 0}, {"id": "linsen-bolo", "name": "Linsen-Bolognese", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 30, "servings": 2, "protein": "huelsen", "cuisine": "ital", "tags": ["vorbereiten", "einfrieren", "training"], "ings": [{"k": "linsen", "a": 120}, {"k": "passata", "a": 500}, {"k": "karotte", "a": 1}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "tomatenmark", "a": 30}, {"k": "oregano", "a": 1}, {"k": "nudeln", "a": 180}, {"k": "parmesan", "a": 10, "opt": true}], "steps": [{"t": "Zwiebel, Karotte und Knoblauch sehr fein hacken (oder im Mixer zerkleinern)."}, {"t": "In etwas Öl anbraten, Tomatenmark 1 Minute mitrösten.", "timer": 4}, {"t": "Linsen, Passata, Kräuter und 300 ml Wasser dazu und köcheln, bis die Linsen zerfallen.", "timer": 18}, {"t": "Inzwischen die Nudeln kochen. Soße abschmecken und mit den Nudeln servieren."}], "tip": "", "n": {"kcal": 646, "p": 31, "c": 110, "f": 4}, "veg": 90, "cheese": 0}, {"id": "bolognese", "name": "Leichte Bolognese mit Rind", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 45, "servings": 4, "protein": "rot", "cuisine": "ital", "tags": ["vorbereiten", "einfrieren", "training"], "ings": [{"k": "faschiertes", "a": 400}, {"k": "karotte", "a": 2}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "passata", "a": 500}, {"k": "tomatendose", "a": 400}, {"k": "tomatenmark", "a": 30}, {"k": "oregano", "a": 1}, {"k": "nudeln", "a": 360}, {"k": "parmesan", "a": 10, "opt": true}], "steps": [{"t": "Zwiebel, Knoblauch und Karotten sehr fein hacken."}, {"t": "Faschiertes in einem großen Topf krümelig anbraten, Gemüse und Tomatenmark dazu und mitrösten.", "timer": 7}, {"t": "Passata, Tomaten und Kräuter dazu, zugedeckt bei kleiner Hitze köcheln lassen.", "timer": 25}, {"t": "Nudeln kochen. Soße abschmecken und servieren."}], "tip": "Ergibt 4 Portionen – Soße portionsweise einfrieren.", "n": {"kcal": 578, "p": 37, "c": 74, "f": 13}, "veg": 65, "cheese": 0}, {"id": "pfannenlasagne", "name": "Pfannenlasagne mit Linsen und Topfen", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 35, "servings": 2, "protein": "huelsen", "cuisine": "ital", "tags": ["vorbereiten"], "ings": [{"k": "lasagne", "a": 140}, {"k": "linsen", "a": 100}, {"k": "passata", "a": 500}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "zucchini", "a": 1}, {"k": "spinattk", "a": 150}, {"k": "topfen", "a": 125}, {"k": "mozzarella", "a": 50}, {"k": "oregano", "a": 1}, {"k": "bruehe", "a": 1}], "steps": [{"t": "Zwiebel, Knoblauch und Zucchini würfeln und in einer großen Pfanne mit etwas Öl anbraten."}, {"t": "Passata, Linsen, Spinat, Brühpulver, Kräuter und 400 ml Wasser dazu, aufkochen.", "timer": 3}, {"t": "Lasagneblätter in Stücke brechen, unterrühren (sie müssen bedeckt sein) und zugedeckt köcheln, bis sie weich sind. Ab und zu rühren.", "timer": 15}, {"t": "Topfen in Klecksen und zerzupften Mozzarella darauf verteilen, Deckel drauf und schmelzen lassen.", "timer": 3}], "tip": "Nur 25 g Käse pro Portion – der Topfen macht's cremig.", "n": {"kcal": 648, "p": 41, "c": 99, "f": 6}, "veg": 175, "cheese": 25}, {"id": "onepot-thunfisch", "name": "One-Pot-Pasta Tomate-Spinat-Thunfisch", "meal": "haupt", "devices": ["herd"], "prep": 5, "total": 20, "servings": 1, "protein": "fisch", "cuisine": "ital", "tags": ["schnell", "training"], "ings": [{"k": "nudeln", "a": 100}, {"k": "tomatendose", "a": 200}, {"k": "thunfisch", "a": 140}, {"k": "spinat", "a": 75}, {"k": "zwiebel", "a": 0.5}, {"k": "knoblauch", "a": 1}, {"k": "bruehe", "a": 1}, {"k": "chili", "a": 1}, {"k": "oel", "a": 0.5}, {"k": "zitrone", "a": 0.25}], "steps": [{"t": "Zwiebel und Knoblauch fein hacken."}, {"t": "Nudeln, Tomaten, Zwiebel, Knoblauch, Brühpulver, Chili und 350 ml Wasser in einen Topf geben, aufkochen und offen unter Rühren köcheln, bis die Nudeln gar sind.", "timer": 12}, {"t": "Spinat und abgetropften Thunfisch unterheben, mit Zitronensaft, Öl, Salz und Pfeffer abschmecken."}], "tip": "", "n": {"kcal": 648, "p": 54, "c": 79, "f": 10}, "veg": 125, "cheese": 0}, {"id": "pasta-huhn-tomate", "name": "Pasta mit Hähnchen und Ofentomaten", "meal": "haupt", "devices": ["ofen", "herd"], "prep": 10, "total": 25, "servings": 1, "protein": "gefluegel", "cuisine": "ital", "tags": ["training"], "ings": [{"k": "nudeln", "a": 90}, {"k": "haehnchen", "a": 130}, {"k": "cherry", "a": 250}, {"k": "knoblauch", "a": 2}, {"k": "oel", "a": 1}, {"k": "basilikum", "a": 10}, {"k": "feta", "a": 30}], "steps": [{"t": "Backrohr auf 200 °C vorheizen. Cherrytomaten und Knoblauch in eine Form, mit Öl, Salz und Pfeffer mischen und rösten, bis sie platzen.", "timer": 18}, {"t": "Inzwischen Nudeln kochen. Hähnchen würfeln und in einer Pfanne durchbraten.", "timer": 10}, {"t": "Tomaten leicht zerdrücken, mit Nudeln, Hähnchen und etwas Nudelwasser mischen. Feta und Basilikum drüber."}], "tip": "", "n": {"kcal": 688, "p": 50, "c": 68, "f": 21}, "veg": 260, "cheese": 30}, {"id": "kuerbisrisotto", "name": "Kürbisrisotto mit weißen Bohnen", "meal": "haupt", "devices": ["herd", "mixer"], "prep": 15, "total": 35, "servings": 2, "protein": "huelsen", "cuisine": "ital", "tags": [], "ings": [{"k": "risottoreis", "a": 150}, {"k": "kuerbis", "a": 400}, {"k": "weissebohnen", "a": 500}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 1}, {"k": "bruehe", "a": 3}, {"k": "oel", "a": 1}, {"k": "feta", "a": 40}, {"k": "parmesan", "a": 15, "opt": true}], "steps": [{"t": "Brühpulver in 900 ml heißem Wasser auflösen. Kürbis klein würfeln, Zwiebel und Knoblauch hacken."}, {"t": "Eine Dose Bohnen mit etwas Brühe im Mixer pürieren."}, {"t": "Zwiebel und Knoblauch im Öl anschwitzen, Reis kurz mitrösten. Kürbis dazu und nach und nach Brühe zugießen, dabei immer wieder rühren.", "timer": 18}, {"t": "Bohnenpüree und die ganzen Bohnen unterrühren und noch kurz ziehen lassen.", "timer": 3}, {"t": "Abschmecken und mit zerbröseltem Feta servieren."}], "tip": "", "n": {"kcal": 714, "p": 30, "c": 115, "f": 12}, "veg": 250, "cheese": 20}, {"id": "pilzrisotto", "name": "Pilz-Erbsen-Risotto mit Hähnchen", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 35, "servings": 2, "protein": "gefluegel", "cuisine": "ital", "tags": ["training"], "ings": [{"k": "risottoreis", "a": 160}, {"k": "haehnchen", "a": 250}, {"k": "pilze", "a": 250}, {"k": "erbsen", "a": 150}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 1}, {"k": "bruehe", "a": 3}, {"k": "oel", "a": 1}, {"k": "zitrone", "a": 0.5}, {"k": "petersilie", "a": 10}, {"k": "parmesan", "a": 20, "opt": true}], "steps": [{"t": "Brühpulver in 900 ml heißem Wasser auflösen. Pilze in Scheiben, Hähnchen in Würfel schneiden, Zwiebel und Knoblauch hacken."}, {"t": "Hähnchen in etwas Öl durchbraten und herausnehmen. Pilze in derselben Pfanne scharf anbraten.", "timer": 8}, {"t": "Zwiebel, Knoblauch und Reis dazu, kurz rösten. Nach und nach Brühe zugießen und rühren.", "timer": 16}, {"t": "Erbsen und Hähnchen zugeben und warm werden lassen.", "timer": 3}, {"t": "Mit Zitronensaft, Petersilie, Salz und Pfeffer abschmecken."}], "tip": "", "n": {"kcal": 592, "p": 44, "c": 79, "f": 9}, "veg": 180, "cheese": 0}, {"id": "lachs-pasta", "name": "Zitronen-Lachs-Pasta mit Spinat", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 20, "servings": 1, "protein": "fisch", "cuisine": "ital", "tags": ["schnell", "training"], "ings": [{"k": "nudeln", "a": 90}, {"k": "lachs", "a": 125}, {"k": "spinat", "a": 100}, {"k": "knoblauch", "a": 1}, {"k": "zitrone", "a": 0.5}, {"k": "skyr", "a": 60}, {"k": "oel", "a": 0.5}, {"k": "chili", "a": 1}], "steps": [{"t": "Nudeln kochen.", "timer": 10}, {"t": "Lachs würfeln und im Öl rundum 3–4 Minuten braten. Knoblauch dazu.", "timer": 4}, {"t": "Spinat in die Pfanne geben und zusammenfallen lassen. Vom Herd nehmen."}, {"t": "Skyr mit Zitronenabrieb, Zitronensaft und 3 EL Nudelwasser verrühren, mit Nudeln und Lachs mischen. Mit Chili abschmecken."}], "tip": "", "n": {"kcal": 682, "p": 47, "c": 63, "f": 24}, "veg": 100, "cheese": 0}, {"id": "pizzabroetchen", "name": "Leichte Pizzabrötchen", "meal": "haupt", "devices": ["ofen", "hlf"], "prep": 10, "total": 20, "servings": 1, "protein": "gefluegel", "cuisine": "ital", "tags": ["schnell"], "ings": [{"k": "broetchen", "a": 2}, {"k": "passata", "a": 80}, {"k": "huehnerschinken", "a": 60}, {"k": "mozzarella", "a": 30}, {"k": "paprika", "a": 0.5}, {"k": "pilze", "a": 50}, {"k": "oregano", "a": 1}], "steps": [{"t": "Backrohr auf 200 °C vorheizen (oder Heißluftfritteuse auf 180 °C). Brötchen halbieren."}, {"t": "Passata mit Oregano, Salz und Pfeffer verrühren und auf die Hälften streichen."}, {"t": "Mit Hühnerschinken, Paprika- und Pilzwürfeln belegen, Mozzarella in kleinen Stücken drauf."}, {"t": "Backen, bis der Käse geschmolzen ist (Heißluftfritteuse ca. 7 Minuten).", "timer": 10}], "tip": "", "n": {"kcal": 524, "p": 34, "c": 72, "f": 9}, "veg": 130, "cheese": 30}, {"id": "wrap-pizza", "name": "Thunfisch-Wrap-Pizza", "meal": "haupt", "devices": ["hlf", "ofen"], "prep": 10, "total": 18, "servings": 1, "protein": "fisch", "cuisine": "ital", "tags": ["schnell"], "ings": [{"k": "wraps", "a": 2}, {"k": "passata", "a": 80}, {"k": "thunfisch", "a": 140}, {"k": "mozzarella", "a": 30}, {"k": "zwiebel", "a": 0.25}, {"k": "mais", "a": 40}, {"k": "rucola", "a": 20}, {"k": "oregano", "a": 1}], "steps": [{"t": "Passata mit Oregano und Salz verrühren und dünn auf die Wraps streichen."}, {"t": "Mit Thunfisch, Zwiebelringen, Mais und Mozzarella belegen."}, {"t": "Nacheinander in der Heißluftfritteuse bei 190 °C knusprig backen (Backrohr: 220 °C, ca. 10 Minuten).", "timer": 6}, {"t": "Mit Rucola belegen."}], "tip": "", "n": {"kcal": 634, "p": 53, "c": 70, "f": 13}, "veg": 45, "cheese": 30}, {"id": "flammkuchen", "name": "Wrap-Flammkuchen mit Skyr", "meal": "haupt", "devices": ["hlf", "ofen"], "prep": 10, "total": 18, "servings": 1, "protein": "gefluegel", "cuisine": "heim", "tags": ["schnell"], "ings": [{"k": "wraps", "a": 2}, {"k": "skyr", "a": 120}, {"k": "zwiebel", "a": 0.5}, {"k": "huehnerschinken", "a": 50}, {"k": "fruehlingszw", "a": 1}, {"k": "salz", "a": 1}], "steps": [{"t": "Skyr mit Salz, Pfeffer und einer Prise Muskat verrühren und auf die Wraps streichen."}, {"t": "Zwiebel in feine Ringe schneiden, mit Hühnerschinken-Streifen darauf verteilen."}, {"t": "In der Heißluftfritteuse bei 190 °C knusprig backen (Backrohr: 220 °C, ca. 10 Minuten).", "timer": 6}, {"t": "Mit Frühlingszwiebel bestreuen."}], "tip": "Statt Speck und Crème fraîche: Hühnerschinken und Skyr – gleicher Geschmack, viel mehr Eiweiß.", "n": {"kcal": 515, "p": 34, "c": 68, "f": 10}, "veg": 65, "cheese": 0}, {"id": "ofengemuese", "name": "Ofengemüse mit Kichererbsen und Joghurt-Dip", "meal": "haupt", "devices": ["ofen"], "prep": 15, "total": 45, "servings": 2, "protein": "huelsen", "cuisine": "orient", "tags": ["vorbereiten"], "ings": [{"k": "kartoffeln", "a": 300}, {"k": "paprika", "a": 1}, {"k": "zucchini", "a": 1}, {"k": "zwiebel", "a": 1}, {"k": "kichererbsen", "a": 240}, {"k": "feta", "a": 60}, {"k": "oel", "a": 1.5}, {"k": "paprikapulver", "a": 1}, {"k": "kreuzkuemmel", "a": 1}, {"k": "skyr", "a": 200}, {"k": "knoblauch", "a": 1}, {"k": "zitrone", "a": 0.5}, {"k": "petersilie", "a": 10}], "steps": [{"t": "Backrohr auf 210 °C vorheizen. Kartoffeln in Spalten, Paprika, Zucchini und Zwiebel in grobe Stücke schneiden."}, {"t": "Alles mit abgespülten Kichererbsen, Öl, Gewürzen und Salz auf einem Blech mischen."}, {"t": "Backen, nach der Hälfte einmal wenden.", "timer": 30}, {"t": "Feta darüberbröseln und kurz mitbacken.", "timer": 5}, {"t": "Skyr mit gepresstem Knoblauch, Zitronensaft, Petersilie und Salz verrühren und dazu servieren."}], "tip": "", "n": {"kcal": 544, "p": 31, "c": 60, "f": 18}, "veg": 260, "cheese": 30}, {"id": "blech-huhn", "name": "Blechgericht Hähnchen-Kartoffel-Paprika", "meal": "haupt", "devices": ["ofen"], "prep": 15, "total": 45, "servings": 2, "protein": "gefluegel", "cuisine": "heim", "tags": ["training", "vorbereiten"], "ings": [{"k": "haehnchen", "a": 300}, {"k": "kartoffeln", "a": 400}, {"k": "paprika", "a": 2}, {"k": "zwiebel", "a": 1}, {"k": "brokkoli", "a": 200}, {"k": "oel", "a": 1.5}, {"k": "paprikapulver", "a": 2}, {"k": "oregano", "a": 1}, {"k": "skyr", "a": 100}, {"k": "knoblauch", "a": 1}], "steps": [{"t": "Backrohr auf 210 °C vorheizen. Kartoffeln vierteln, Paprika und Zwiebel in Stücke schneiden."}, {"t": "Kartoffeln mit der Hälfte von Öl und Gewürzen auf dem Blech verteilen und vorbacken.", "timer": 15}, {"t": "Hähnchen in große Würfel schneiden, mit Paprika, Zwiebel, Brokkoli, restlichem Öl, Gewürzen und Salz mischen und aufs Blech geben."}, {"t": "Fertig backen, bis das Hähnchen durch ist.", "timer": 20}, {"t": "Skyr mit Knoblauch und Salz als Dip dazu."}], "tip": "", "n": {"kcal": 523, "p": 49, "c": 52, "f": 11}, "veg": 310, "cheese": 0}, {"id": "ofenlachs", "name": "Ofenlachs mit Gemüse und Kartoffeln", "meal": "haupt", "devices": ["ofen"], "prep": 10, "total": 40, "servings": 1, "protein": "fisch", "cuisine": "heim", "tags": [], "ings": [{"k": "lachs", "a": 125}, {"k": "kartoffeln", "a": 250}, {"k": "brokkoli", "a": 150}, {"k": "cherry", "a": 100}, {"k": "zitrone", "a": 0.5}, {"k": "oel", "a": 1}, {"k": "petersilie", "a": 5}, {"k": "skyr", "a": 50}], "steps": [{"t": "Backrohr auf 200 °C vorheizen. Kartoffeln in kleine Würfel schneiden, mit der Hälfte des Öls und Salz aufs Blech."}, {"t": "Kartoffeln vorbacken.", "timer": 15}, {"t": "Brokkoli und Tomaten dazugeben, Lachs in die Mitte legen, salzen, mit restlichem Öl und Zitronenscheiben belegen."}, {"t": "Fertig backen.", "timer": 15}, {"t": "Skyr mit Zitronensaft, Petersilie und Salz verrühren und dazu servieren."}], "tip": "", "n": {"kcal": 643, "p": 41, "c": 53, "f": 28}, "veg": 255, "cheese": 0}, {"id": "tofu-erdnuss", "name": "Tofu-Gemüse-Pfanne mit Erdnusssoße", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 25, "servings": 1, "protein": "tofu", "cuisine": "asia", "tags": ["training"], "ings": [{"k": "tofu", "a": 200}, {"k": "reis", "a": 70}, {"k": "brokkoli", "a": 150}, {"k": "paprika", "a": 0.5}, {"k": "karotte", "a": 1}, {"k": "erdnussmus", "a": 20}, {"k": "sojasauce", "a": 1}, {"k": "limette", "a": 0.5}, {"k": "ingwer", "a": 5}, {"k": "knoblauch", "a": 1}, {"k": "honig", "a": 1}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Tofu gut ausdrücken und würfeln. Gemüse in mundgerechte Stücke schneiden."}, {"t": "Tofu im Öl rundum goldbraun braten, herausnehmen.", "timer": 6}, {"t": "Gemüse mit Ingwer und Knoblauch bissfest braten.", "timer": 5}, {"t": "Erdnussmus mit Sojasauce, Limettensaft, Honig und 4 EL warmem Wasser verrühren, mit Tofu in die Pfanne geben und durchschwenken."}], "tip": "", "n": {"kcal": 819, "p": 44, "c": 84, "f": 33}, "veg": 315, "cheese": 0}, {"id": "teriyaki-huhn", "name": "Teriyaki-Hähnchen-Gemüse-Pfanne", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 20, "servings": 1, "protein": "gefluegel", "cuisine": "asia", "tags": ["schnell", "training"], "ings": [{"k": "haehnchen", "a": 150}, {"k": "reis", "a": 70}, {"k": "brokkoli", "a": 100}, {"k": "paprika", "a": 0.5}, {"k": "fruehlingszw", "a": 2}, {"k": "sojasauce", "a": 1.5}, {"k": "honig", "a": 1.5}, {"k": "ingwer", "a": 5}, {"k": "knoblauch", "a": 1}, {"k": "sesam", "a": 5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Sojasauce, Honig, geriebenen Ingwer, Knoblauch und 2 EL Wasser verrühren."}, {"t": "Hähnchen in Streifen im Öl scharf anbraten, Brokkoli und Paprika dazu und mitbraten.", "timer": 7}, {"t": "Soße zugießen und einkochen lassen, bis sie glänzt.", "timer": 2}, {"t": "Mit Frühlingszwiebel und Sesam auf dem Reis servieren."}], "tip": "", "n": {"kcal": 606, "p": 47, "c": 75, "f": 11}, "veg": 215, "cheese": 0}, {"id": "dal", "name": "Rotes Linsen-Dal mit Spinat", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 30, "servings": 2, "protein": "huelsen", "cuisine": "indisch", "tags": ["vorbereiten", "einfrieren", "training"], "ings": [{"k": "linsen", "a": 200}, {"k": "tomatendose", "a": 400}, {"k": "kokosmilch", "a": 200}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "ingwer", "a": 15}, {"k": "spinat", "a": 150}, {"k": "currypulver", "a": 2}, {"k": "kreuzkuemmel", "a": 1}, {"k": "reis", "a": 120}, {"k": "skyr", "a": 100}], "steps": [{"t": "Zwiebel, Knoblauch und Ingwer hacken und in etwas Öl anschwitzen, Gewürze 1 Minute mitrösten."}, {"t": "Linsen, Tomaten, Kokosmilch und 400 ml Wasser dazu und köcheln, bis die Linsen zerfallen. Inzwischen Reis kochen.", "timer": 18}, {"t": "Spinat unterrühren und zusammenfallen lassen. Mit Salz und Zitrone abschmecken."}, {"t": "Mit Reis und Skyr servieren."}], "tip": "", "n": {"kcal": 774, "p": 41, "c": 115, "f": 13}, "veg": 132, "cheese": 0}, {"id": "kichererbsen-curry", "name": "Kichererbsen-Kokos-Curry", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 25, "servings": 2, "protein": "huelsen", "cuisine": "asia", "tags": ["vorbereiten"], "ings": [{"k": "kichererbsen", "a": 480}, {"k": "kokosmilch", "a": 200}, {"k": "currypaste", "a": 30}, {"k": "zucchini", "a": 1}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 1}, {"k": "reis", "a": 140}, {"k": "skyr", "a": 100}, {"k": "limette", "a": 0.5}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Zwiebel, Zucchini und Paprika würfeln."}, {"t": "Zwiebel in etwas Öl anbraten, Currypaste 1 Minute mitrösten. Gemüse dazu und kurz braten.", "timer": 4}, {"t": "Kokosmilch, abgespülte Kichererbsen und 150 ml Wasser zugeben und köcheln.", "timer": 10}, {"t": "Mit Limettensaft und Salz abschmecken, mit Reis und Skyr servieren."}], "tip": "", "n": {"kcal": 754, "p": 32, "c": 107, "f": 19}, "veg": 255, "cheese": 0}, {"id": "huhn-curry", "name": "Hähnchen-Brokkoli-Curry", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 25, "servings": 2, "protein": "gefluegel", "cuisine": "asia", "tags": ["training", "vorbereiten"], "ings": [{"k": "haehnchen", "a": 300}, {"k": "brokkoli", "a": 400}, {"k": "kokosmilch", "a": 400}, {"k": "currypaste", "a": 40}, {"k": "zwiebel", "a": 1}, {"k": "reis", "a": 140}, {"k": "limette", "a": 1}, {"k": "koriander", "a": 10, "opt": true}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Zwiebel hacken, Hähnchen würfeln. Hähnchen in etwas Öl anbraten, Zwiebel und Currypaste dazu und 1 Minute mitrösten.", "timer": 5}, {"t": "Kokosmilch und Brokkoli-Röschen zugeben und köcheln, bis der Brokkoli bissfest ist.", "timer": 8}, {"t": "Mit Limettensaft und Salz abschmecken, mit Reis (und Koriander) servieren."}], "tip": "", "n": {"kcal": 728, "p": 49, "c": 71, "f": 25}, "veg": 255, "cheese": 0}, {"id": "poke-lachs", "name": "Poke Bowl mit Lachs", "meal": "haupt", "devices": ["herd", "hlf"], "prep": 15, "total": 25, "servings": 1, "protein": "fisch", "cuisine": "asia", "tags": ["training"], "ings": [{"k": "reis", "a": 70}, {"k": "lachs", "a": 125}, {"k": "gurke", "a": 100}, {"k": "avocado", "a": 0.5}, {"k": "karotte", "a": 1}, {"k": "fruehlingszw", "a": 1}, {"k": "sojasauce", "a": 1}, {"k": "sesam", "a": 5}, {"k": "limette", "a": 0.5}, {"k": "honig", "a": 0.5}, {"k": "essig", "a": 0.5}], "steps": [{"t": "Reis kochen und mit dem Essig mischen.", "timer": 12}, {"t": "Lachs mit etwas Sojasauce bestreichen und in der Heißluftfritteuse bei 200 °C garen (oder in der Pfanne).", "timer": 8}, {"t": "Gurke und Avocado in Scheiben, Karotte in feine Streifen schneiden."}, {"t": "Restliche Sojasauce mit Limettensaft und Honig verrühren. Alles auf dem Reis anrichten, Sesam und Frühlingszwiebel drüber."}], "tip": "", "n": {"kcal": 714, "p": 36, "c": 69, "f": 31}, "veg": 270, "cheese": 0}, {"id": "poke-tofu", "name": "Poke Bowl mit Knusper-Tofu", "meal": "haupt", "devices": ["hlf", "herd"], "prep": 15, "total": 25, "servings": 1, "protein": "tofu", "cuisine": "asia", "tags": [], "ings": [{"k": "tofu", "a": 200}, {"k": "staerke", "a": 1}, {"k": "reis", "a": 70}, {"k": "gurke", "a": 100}, {"k": "karotte", "a": 1}, {"k": "avocado", "a": 0.5}, {"k": "mais", "a": 50}, {"k": "sojasauce", "a": 1.5}, {"k": "sesam", "a": 5}, {"k": "limette", "a": 0.5}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Tofu ausdrücken, würfeln, mit 1 EL Sojasauce und der Stärke mischen und in der Heißluftfritteuse bei 200 °C knusprig backen (zwischendurch schütteln).", "timer": 14}, {"t": "Gemüse und Avocado schneiden, Mais abspülen."}, {"t": "Restliche Sojasauce mit Limettensaft verrühren, alles auf dem Reis anrichten, Sesam drüber."}], "tip": "", "n": {"kcal": 788, "p": 38, "c": 85, "f": 31}, "veg": 255, "cheese": 0}, {"id": "fried-rice", "name": "Gebratener Reis mit Ei und Erbsen", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 12, "servings": 1, "protein": "ei", "cuisine": "asia", "tags": ["schnell", "reste"], "ings": [{"k": "reis", "a": 70}, {"k": "eier", "a": 3}, {"k": "erbsen", "a": 100}, {"k": "karotte", "a": 1}, {"k": "fruehlingszw", "a": 2}, {"k": "sojasauce", "a": 1}, {"k": "oel", "a": 1}], "steps": [{"t": "Ideal mit gekochtem Reis vom Vortag. Sonst Reis kochen und ausgebreitet abkühlen lassen."}, {"t": "Karotte würfeln und mit den Erbsen im Öl bei hoher Hitze braten.", "timer": 3}, {"t": "Reis dazu und anbraten, bis er leicht knusprig wird.", "timer": 3}, {"t": "Reis zur Seite schieben, Eier in die Lücke schlagen, stocken lassen und unterrühren.", "timer": 2}, {"t": "Mit Sojasauce und Frühlingszwiebel abschmecken."}], "tip": "Perfekte Resteverwertung: Gemüse- oder Hähnchenreste einfach mitbraten.", "n": {"kcal": 712, "p": 36, "c": 75, "f": 28}, "veg": 110, "cheese": 0}, {"id": "knusper-huhn", "name": "Knusper-Hähnchenstreifen mit Süßkartoffel-Pommes", "meal": "haupt", "devices": ["hlf"], "prep": 15, "total": 35, "servings": 1, "protein": "gefluegel", "cuisine": "heim", "tags": ["training"], "ings": [{"k": "haehnchen", "a": 150}, {"k": "cornflakes", "a": 30}, {"k": "eier", "a": 1}, {"k": "suesskartoffel", "a": 300}, {"k": "oel", "a": 1}, {"k": "paprikapulver", "a": 1}, {"k": "skyr", "a": 80}, {"k": "knoblauch", "a": 1}], "steps": [{"t": "Süßkartoffel in Stifte schneiden, mit Öl, Paprikapulver und Salz mischen."}, {"t": "In der Heißluftfritteuse bei 200 °C backen, zwischendurch schütteln. Herausnehmen und warm halten.", "timer": 15}, {"t": "Cornflakes zerbröseln. Hähnchen in Streifen schneiden, salzen, durch verquirltes Ei ziehen und in den Cornflakes wälzen."}, {"t": "Hähnchenstreifen bei 200 °C knusprig backen, nach der Hälfte wenden.", "timer": 10}, {"t": "Skyr mit Knoblauch und Salz als Dip dazu."}], "tip": "", "n": {"kcal": 765, "p": 58, "c": 90, "f": 19}, "veg": 300, "cheese": 0}, {"id": "hlf-lachs", "name": "Honig-Soja-Lachs mit Brokkoli", "meal": "haupt", "devices": ["hlf", "herd"], "prep": 10, "total": 20, "servings": 1, "protein": "fisch", "cuisine": "asia", "tags": ["schnell"], "ings": [{"k": "lachs", "a": 125}, {"k": "brokkoli", "a": 200}, {"k": "reis", "a": 70}, {"k": "zitrone", "a": 0.5}, {"k": "sojasauce", "a": 1}, {"k": "honig", "a": 1}, {"k": "sesam", "a": 5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Sojasauce, Honig und Zitronensaft verrühren, Lachs damit bestreichen. Brokkoli mit Öl und Salz mischen."}, {"t": "Brokkoli in der Heißluftfritteuse bei 200 °C vorgaren.", "timer": 4}, {"t": "Lachs dazulegen und alles fertig garen.", "timer": 8}, {"t": "Mit Sesam bestreuen und mit Reis servieren."}], "tip": "", "n": {"kcal": 674, "p": 39, "c": 68, "f": 25}, "veg": 200, "cheese": 0}, {"id": "knusper-tofu", "name": "Knusper-Tofu mit Reis und Gurkensalat", "meal": "haupt", "devices": ["hlf", "herd"], "prep": 15, "total": 25, "servings": 1, "protein": "tofu", "cuisine": "asia", "tags": [], "ings": [{"k": "tofu", "a": 200}, {"k": "staerke", "a": 1}, {"k": "sojasauce", "a": 1}, {"k": "reis", "a": 70}, {"k": "gurke", "a": 200}, {"k": "essig", "a": 1}, {"k": "honig", "a": 1}, {"k": "sesam", "a": 5}, {"k": "chili", "a": 1}, {"k": "fruehlingszw", "a": 1}], "steps": [{"t": "Reis kochen.", "timer": 12}, {"t": "Tofu ausdrücken, würfeln, mit Sojasauce und Stärke mischen und in der Heißluftfritteuse bei 200 °C knusprig backen.", "timer": 14}, {"t": "Gurke in dünne Scheiben schneiden, mit Essig, Honig, Chili und Salz mischen."}, {"t": "Tofu auf dem Reis mit Gurkensalat anrichten, Sesam und Frühlingszwiebel drüber."}], "tip": "", "n": {"kcal": 630, "p": 35, "c": 78, "f": 19}, "veg": 215, "cheese": 0}, {"id": "falafel", "name": "Falafel aus Dosen-Kichererbsen", "meal": "haupt", "devices": ["hlf", "mixer"], "prep": 20, "total": 35, "servings": 2, "protein": "huelsen", "cuisine": "orient", "tags": ["vorbereiten"], "ings": [{"k": "kichererbsen", "a": 480}, {"k": "zwiebel", "a": 1}, {"k": "knoblauch", "a": 2}, {"k": "petersilie", "a": 20}, {"k": "kreuzkuemmel", "a": 2}, {"k": "mehl", "a": 40}, {"k": "backpulver", "a": 1}, {"k": "oel", "a": 1}, {"k": "wraps", "a": 2}, {"k": "skyr", "a": 200}, {"k": "tahini", "a": 15}, {"k": "gurke", "a": 150}, {"k": "cherry", "a": 150}], "steps": [{"t": "Kichererbsen abspülen und sehr gut trocken tupfen."}, {"t": "Mit Zwiebel, Knoblauch, Petersilie, Kreuzkümmel, Salz, Mehl und Backpulver im Mixer grob pürieren (nicht zu Mus)."}, {"t": "Mit feuchten Händen ca. 12 flache Bällchen formen, mit Öl bestreichen und in der Heißluftfritteuse bei 190 °C backen, nach der Hälfte wenden.", "timer": 14}, {"t": "Skyr mit Tahini, Salz und etwas Zitrone verrühren. Gurke und Tomaten schneiden."}, {"t": "Falafel mit Gemüse und Soße in Wraps oder als Teller servieren."}], "tip": "", "n": {"kcal": 742, "p": 39, "c": 93, "f": 21}, "veg": 210, "cheese": 0}, {"id": "garnelen", "name": "Knoblauch-Garnelen mit Couscous-Salat", "meal": "haupt", "devices": ["herd"], "prep": 15, "total": 20, "servings": 1, "protein": "fisch", "cuisine": "orient", "tags": ["schnell", "training"], "ings": [{"k": "garnelen", "a": 200}, {"k": "couscous", "a": 70}, {"k": "gurke", "a": 100}, {"k": "cherry", "a": 100}, {"k": "paprika", "a": 0.5}, {"k": "zitrone", "a": 0.5}, {"k": "knoblauch", "a": 2}, {"k": "oel", "a": 1}, {"k": "petersilie", "a": 10}, {"k": "chili", "a": 1}, {"k": "bruehe", "a": 0.5}], "steps": [{"t": "Garnelen in kaltem Wasser auftauen."}, {"t": "Couscous mit der gleichen Menge heißer Brühe übergießen und quellen lassen.", "timer": 5}, {"t": "Gurke, Tomaten, Paprika und Petersilie klein schneiden, mit Couscous, Zitronensaft, der Hälfte des Öls und Salz mischen."}, {"t": "Garnelen trocken tupfen und mit Knoblauch und Chili im restlichen Öl braten, bis sie rosa sind.", "timer": 4}, {"t": "Auf dem Couscous-Salat servieren."}], "tip": "", "n": {"kcal": 583, "p": 48, "c": 63, "f": 14}, "veg": 290, "cheese": 0}, {"id": "shakshuka", "name": "Shakshuka mit Bohnen", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 25, "servings": 1, "protein": "ei", "cuisine": "orient", "tags": ["schnell"], "ings": [{"k": "eier", "a": 3}, {"k": "tomatendose", "a": 400}, {"k": "weissebohnen", "a": 125}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 0.5}, {"k": "knoblauch", "a": 1}, {"k": "kreuzkuemmel", "a": 1}, {"k": "paprikapulver", "a": 1}, {"k": "feta", "a": 30}, {"k": "broetchen", "a": 1}, {"k": "petersilie", "a": 5}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Zwiebel, Knoblauch und Paprika würfeln und in einer Pfanne im Öl anbraten, Gewürze kurz mitrösten.", "timer": 5}, {"t": "Tomaten und abgespülte Bohnen dazu, salzen und einköcheln lassen.", "timer": 8}, {"t": "Mit einem Löffel drei Mulden formen, Eier hineinschlagen, Deckel drauf und stocken lassen.", "timer": 6}, {"t": "Mit Feta und Petersilie bestreuen, mit Brötchen servieren."}], "tip": "", "n": {"kcal": 832, "p": 50, "c": 77, "f": 33}, "veg": 215, "cheese": 30}, {"id": "frittata", "name": "Ofen-Frittata mit Gemüse", "meal": "haupt", "devices": ["ofen"], "prep": 10, "total": 35, "servings": 2, "protein": "ei", "cuisine": "heim", "tags": ["reste", "vorbereiten"], "ings": [{"k": "eier", "a": 6}, {"k": "huettenkaese", "a": 200}, {"k": "spinat", "a": 100}, {"k": "paprika", "a": 1}, {"k": "zwiebel", "a": 1}, {"k": "kartoffeln", "a": 200}, {"k": "cherry", "a": 100}, {"k": "oregano", "a": 1}, {"k": "oel", "a": 0.5}], "steps": [{"t": "Backrohr auf 190 °C vorheizen. Kartoffeln (gerne gekochte Reste) würfeln, Paprika und Zwiebel klein schneiden."}, {"t": "Gemüse in einer ofenfesten Pfanne mit dem Öl anbraten, Spinat kurz mitgaren.", "timer": 6}, {"t": "Eier mit Hüttenkäse, Kräutern, Salz und Pfeffer verquirlen und darübergießen. Halbierte Tomaten drauflegen."}, {"t": "Im Ofen backen, bis die Frittata in der Mitte fest ist.", "timer": 20}], "tip": "Schmeckt auch kalt – die zweite Portion am nächsten Tag mitnehmen. Jedes Gemüse von gestern passt rein.", "n": {"kcal": 517, "p": 40, "c": 31, "f": 25}, "veg": 230, "cheese": 0}, {"id": "thunfisch-salat", "name": "Thunfisch-Bohnen-Salat mit Ei", "meal": "haupt", "devices": ["herd"], "prep": 10, "total": 12, "servings": 1, "protein": "fisch", "cuisine": "ital", "tags": ["schnell"], "ings": [{"k": "thunfisch", "a": 140}, {"k": "weissebohnen", "a": 250}, {"k": "eier", "a": 1}, {"k": "zwiebel", "a": 0.25}, {"k": "cherry", "a": 100}, {"k": "gurke", "a": 100}, {"k": "rucola", "a": 40}, {"k": "oel", "a": 1}, {"k": "essig", "a": 1}, {"k": "senf", "a": 1}], "steps": [{"t": "Ei 9 Minuten hart kochen.", "timer": 9}, {"t": "Bohnen abspülen, Tomaten halbieren, Gurke würfeln, Zwiebel in feine Ringe schneiden."}, {"t": "Öl, Essig, Senf, Salz und Pfeffer verrühren."}, {"t": "Alles mit Rucola und Thunfisch mischen, geviertelte Eier drauf."}], "tip": "", "n": {"kcal": 623, "p": 63, "c": 41, "f": 19}, "veg": 265, "cheese": 0}], "ingredients": {"zwiebel": {"name": "Zwiebel", "unit": "stk", "g": 100, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 30, "staple": true}, "knoblauch": {"name": "Knoblauch", "unit": "zehe", "g": 4, "dept": "obst", "pack": 10, "packLabel": "1 Knolle", "shelf": 30, "staple": true}, "ingwer": {"name": "Ingwer", "unit": "g", "g": 1, "dept": "obst", "pack": 50, "packLabel": "1 Stück (ca. 50 g)", "shelf": 21, "staple": false}, "paprika": {"name": "Paprika", "unit": "stk", "g": 160, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 7, "staple": false}, "zucchini": {"name": "Zucchini", "unit": "stk", "g": 250, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 6, "staple": false}, "brokkoli": {"name": "Brokkoli", "unit": "g", "g": 1, "dept": "obst", "pack": 400, "packLabel": "1 Kopf (ca. 400 g)", "shelf": 5, "staple": false}, "karotte": {"name": "Karotte", "unit": "stk", "g": 80, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 14, "staple": false}, "kuerbis": {"name": "Hokkaido-Kürbis", "unit": "g", "g": 1, "dept": "obst", "pack": 1000, "packLabel": "1 Kürbis (ca. 1 kg)", "shelf": 5, "staple": false}, "kartoffeln": {"name": "Kartoffeln", "unit": "g", "g": 1, "dept": "obst", "pack": 1000, "packLabel": "Netz 1 kg", "shelf": 21, "staple": false}, "suesskartoffel": {"name": "Süßkartoffel", "unit": "g", "g": 1, "dept": "obst", "pack": 400, "packLabel": "1 große (ca. 400 g)", "shelf": 14, "staple": false}, "spinat": {"name": "Babyspinat", "unit": "g", "g": 1, "dept": "obst", "pack": 150, "packLabel": "Pkg. 150 g", "shelf": 3, "staple": false}, "rucola": {"name": "Rucola", "unit": "g", "g": 1, "dept": "obst", "pack": 125, "packLabel": "Pkg. 125 g", "shelf": 3, "staple": false}, "cherry": {"name": "Cherrytomaten", "unit": "g", "g": 1, "dept": "obst", "pack": 250, "packLabel": "Pkg. 250 g", "shelf": 5, "staple": false}, "pilze": {"name": "Champignons", "unit": "g", "g": 1, "dept": "obst", "pack": 250, "packLabel": "Pkg. 250 g", "shelf": 3, "staple": false}, "gurke": {"name": "Gurke", "unit": "g", "g": 1, "dept": "obst", "pack": 400, "packLabel": "1 Gurke", "shelf": 5, "staple": false}, "avocado": {"name": "Avocado", "unit": "stk", "g": 150, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 1, "staple": false}, "fruehlingszw": {"name": "Frühlingszwiebel", "unit": "stk", "g": 15, "dept": "obst", "pack": 6, "packLabel": "1 Bund", "shelf": 5, "staple": false}, "zitrone": {"name": "Zitrone", "unit": "stk", "g": 40, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 14, "staple": false}, "limette": {"name": "Limette", "unit": "stk", "g": 30, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 14, "staple": false}, "banane": {"name": "Banane", "unit": "stk", "g": 120, "dept": "obst", "pack": 1, "packLabel": "Stück", "shelf": 5, "staple": false}, "petersilie": {"name": "Petersilie", "unit": "g", "g": 1, "dept": "obst", "pack": 20, "packLabel": "1 Bund", "shelf": 4, "staple": false}, "koriander": {"name": "Koriander", "unit": "g", "g": 1, "dept": "obst", "pack": 20, "packLabel": "1 Bund", "shelf": 3, "staple": false}, "basilikum": {"name": "Basilikum", "unit": "g", "g": 1, "dept": "obst", "pack": 20, "packLabel": "1 Topf", "shelf": 5, "staple": false}, "skyr": {"name": "Skyr natur", "unit": "g", "g": 1, "dept": "kuehl", "pack": 450, "packLabel": "Becher 450 g", "shelf": 5, "staple": false}, "topfen": {"name": "Magertopfen", "unit": "g", "g": 1, "dept": "kuehl", "pack": 250, "packLabel": "Pkg. 250 g", "shelf": 4, "staple": false}, "joghurt": {"name": "Naturjoghurt 1 %", "unit": "g", "g": 1, "dept": "kuehl", "pack": 500, "packLabel": "Becher 500 g", "shelf": 5, "staple": false}, "huettenkaese": {"name": "Hüttenkäse", "unit": "g", "g": 1, "dept": "kuehl", "pack": 200, "packLabel": "Becher 200 g", "shelf": 4, "staple": false}, "feta": {"name": "Feta", "unit": "g", "g": 1, "dept": "kuehl", "pack": 200, "packLabel": "Pkg. 200 g", "shelf": 5, "staple": false}, "mozzarella": {"name": "Mozzarella light", "unit": "g", "g": 1, "dept": "kuehl", "pack": 125, "packLabel": "Pkg. 125 g", "shelf": 3, "staple": false}, "parmesan": {"name": "Parmesan", "unit": "g", "g": 1, "dept": "kuehl", "pack": 100, "packLabel": "Stück 100 g", "shelf": 30, "staple": false}, "milch": {"name": "Milch 1,5 %", "unit": "ml", "g": 1, "dept": "kuehl", "pack": 1000, "packLabel": "1 Liter", "shelf": 5, "staple": false}, "tofu": {"name": "Tofu natur", "unit": "g", "g": 1, "dept": "kuehl", "pack": 200, "packLabel": "Pkg. 200 g", "shelf": 3, "staple": false}, "eier": {"name": "Eier", "unit": "stk", "g": 60, "dept": "kuehl", "pack": 10, "packLabel": "10er-Pkg.", "shelf": 21, "staple": false}, "huehnerschinken": {"name": "Hühnerschinken", "unit": "g", "g": 1, "dept": "kuehl", "pack": 100, "packLabel": "Pkg. 100 g", "shelf": 4, "staple": false}, "haehnchen": {"name": "Hähnchenbrust", "unit": "g", "g": 1, "dept": "fleisch", "pack": 400, "packLabel": "Pkg. ca. 400 g", "shelf": 1, "staple": false}, "faschiertes": {"name": "Rinderfaschiertes", "unit": "g", "g": 1, "dept": "fleisch", "pack": 400, "packLabel": "Pkg. 400 g", "shelf": 1, "staple": false}, "lachs": {"name": "Lachsfilet", "unit": "g", "g": 1, "dept": "fleisch", "pack": 250, "packLabel": "Pkg. 2 Filets (250 g)", "shelf": 1, "staple": false}, "thunfisch": {"name": "Thunfisch natur (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 140, "packLabel": "1 Dose (140 g abgetropft)", "shelf": 2, "staple": false}, "toast": {"name": "Vollkorntoast", "unit": "stk", "g": 30, "dept": "brot", "pack": 16, "packLabel": "Pkg. (16 Scheiben)", "shelf": 10, "staple": false}, "broetchen": {"name": "Vollkornbrötchen", "unit": "stk", "g": 70, "dept": "brot", "pack": 4, "packLabel": "4 Stück", "shelf": 2, "staple": false}, "wraps": {"name": "Vollkorn-Wraps", "unit": "stk", "g": 60, "dept": "brot", "pack": 6, "packLabel": "Pkg. 6 Stück", "shelf": 10, "staple": false}, "hafer": {"name": "Haferflocken", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 180, "staple": true}, "reis": {"name": "Reis (Basmati)", "unit": "g", "g": 1, "dept": "trocken", "pack": 1000, "packLabel": "Pkg. 1 kg", "shelf": 365, "staple": true}, "nudeln": {"name": "Vollkornnudeln", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 365, "staple": true}, "lasagne": {"name": "Lasagneblätter", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 365, "staple": true}, "risottoreis": {"name": "Risottoreis", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 365, "staple": true}, "couscous": {"name": "Couscous", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 365, "staple": true}, "linsen": {"name": "Rote Linsen", "unit": "g", "g": 1, "dept": "trocken", "pack": 500, "packLabel": "Pkg. 500 g", "shelf": 365, "staple": true}, "mehl": {"name": "Vollkornmehl", "unit": "g", "g": 1, "dept": "trocken", "pack": 1000, "packLabel": "Pkg. 1 kg", "shelf": 180, "staple": true}, "cornflakes": {"name": "Cornflakes (ungezuckert)", "unit": "g", "g": 1, "dept": "trocken", "pack": 375, "packLabel": "Pkg. 375 g", "shelf": 90, "staple": true}, "staerke": {"name": "Speisestärke", "unit": "el", "g": 10, "dept": "trocken", "pack": 40, "packLabel": "Pkg. 400 g", "shelf": 365, "staple": true}, "chia": {"name": "Chiasamen", "unit": "g", "g": 1, "dept": "trocken", "pack": 200, "packLabel": "Pkg. 200 g", "shelf": 365, "staple": true}, "sesam": {"name": "Sesam", "unit": "g", "g": 1, "dept": "trocken", "pack": 100, "packLabel": "Pkg. 100 g", "shelf": 180, "staple": true}, "walnuss": {"name": "Walnüsse", "unit": "g", "g": 1, "dept": "trocken", "pack": 100, "packLabel": "Pkg. 100 g", "shelf": 90, "staple": true}, "erdnussmus": {"name": "Erdnussmus", "unit": "g", "g": 1, "dept": "konserve", "pack": 350, "packLabel": "Glas 350 g", "shelf": 90, "staple": true}, "tahini": {"name": "Tahini (Sesammus)", "unit": "g", "g": 1, "dept": "konserve", "pack": 300, "packLabel": "Glas 300 g", "shelf": 90, "staple": true}, "tomatendose": {"name": "Tomaten gehackt (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 400, "packLabel": "Dose 400 g", "shelf": 3, "staple": false}, "passata": {"name": "Passata", "unit": "g", "g": 1, "dept": "konserve", "pack": 500, "packLabel": "Flasche 500 g", "shelf": 4, "staple": false}, "kichererbsen": {"name": "Kichererbsen (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 240, "packLabel": "Dose (240 g abgetropft)", "shelf": 3, "staple": false}, "kidney": {"name": "Kidneybohnen (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 250, "packLabel": "Dose (250 g abgetropft)", "shelf": 3, "staple": false}, "weissebohnen": {"name": "Weiße Bohnen (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 250, "packLabel": "Dose (250 g abgetropft)", "shelf": 3, "staple": false}, "schwarzebohnen": {"name": "Schwarze Bohnen (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 250, "packLabel": "Dose (250 g abgetropft)", "shelf": 3, "staple": false}, "mais": {"name": "Mais (Dose)", "unit": "g", "g": 1, "dept": "konserve", "pack": 140, "packLabel": "Dose (140 g abgetropft)", "shelf": 3, "staple": false}, "kokosmilch": {"name": "Kokosmilch light", "unit": "ml", "g": 1, "dept": "konserve", "pack": 400, "packLabel": "Dose 400 ml", "shelf": 3, "staple": false}, "currypaste": {"name": "Rote Currypaste", "unit": "g", "g": 1, "dept": "konserve", "pack": 110, "packLabel": "Glas 110 g", "shelf": 30, "staple": true}, "tomatenmark": {"name": "Tomatenmark", "unit": "g", "g": 1, "dept": "konserve", "pack": 200, "packLabel": "Tube 200 g", "shelf": 30, "staple": true}, "oel": {"name": "Olivenöl", "unit": "el", "g": 10, "dept": "gewuerz", "pack": 75, "packLabel": "Flasche 750 ml", "shelf": 365, "staple": true}, "sojasauce": {"name": "Sojasauce", "unit": "el", "g": 15, "dept": "gewuerz", "pack": 16, "packLabel": "Flasche 250 ml", "shelf": 365, "staple": true}, "honig": {"name": "Honig", "unit": "tl", "g": 7, "dept": "gewuerz", "pack": 70, "packLabel": "Glas 500 g", "shelf": 365, "staple": true}, "essig": {"name": "Essig (Apfel/Reis)", "unit": "el", "g": 10, "dept": "gewuerz", "pack": 50, "packLabel": "Flasche 500 ml", "shelf": 365, "staple": true}, "senf": {"name": "Senf", "unit": "tl", "g": 5, "dept": "gewuerz", "pack": 40, "packLabel": "Tube", "shelf": 90, "staple": true}, "bruehe": {"name": "Gemüsebrühe (Pulver)", "unit": "tl", "g": 5, "dept": "gewuerz", "pack": 50, "packLabel": "Dose", "shelf": 365, "staple": true}, "backpulver": {"name": "Backpulver", "unit": "tl", "g": 4, "dept": "trocken", "pack": 20, "packLabel": "Pkg.", "shelf": 365, "staple": true}, "salz": {"name": "Salz & Pfeffer", "unit": "prise", "g": 0, "dept": "gewuerz", "pack": 1, "packLabel": "", "shelf": 999, "staple": true}, "kreuzkuemmel": {"name": "Kreuzkümmel", "unit": "tl", "g": 2, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "paprikapulver": {"name": "Paprikapulver (geräuchert)", "unit": "tl", "g": 2, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "currypulver": {"name": "Currypulver", "unit": "tl", "g": 2, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "chili": {"name": "Chiliflocken", "unit": "prise", "g": 0, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "oregano": {"name": "Italienische Kräuter", "unit": "tl", "g": 1, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "zimt": {"name": "Zimt", "unit": "tl", "g": 2, "dept": "gewuerz", "pack": 30, "packLabel": "Dose", "shelf": 365, "staple": true}, "erbsen": {"name": "Erbsen (TK)", "unit": "g", "g": 1, "dept": "tk", "pack": 450, "packLabel": "Pkg. 450 g", "shelf": 180, "staple": true}, "beeren": {"name": "Beerenmischung (TK)", "unit": "g", "g": 1, "dept": "tk", "pack": 300, "packLabel": "Pkg. 300 g", "shelf": 180, "staple": true}, "spinattk": {"name": "Blattspinat (TK)", "unit": "g", "g": 1, "dept": "tk", "pack": 450, "packLabel": "Pkg. 450 g", "shelf": 180, "staple": true}, "garnelen": {"name": "Garnelen (TK)", "unit": "g", "g": 1, "dept": "tk", "pack": 250, "packLabel": "Pkg. 250 g", "shelf": 180, "staple": true}}, "depts": [["obst", "Obst & Gemüse"], ["brot", "Brot & Gebäck"], ["kuehl", "Kühlregal"], ["fleisch", "Fleisch & Fisch"], ["konserve", "Konserven & Gläser"], ["trocken", "Nudeln, Reis & Trockenes"], ["gewuerz", "Gewürze, Öl & Saucen"], ["tk", "Tiefkühl"]], "nutri": {"zwiebel": [40, 1.2, 8, 0.2], "knoblauch": [140, 6, 28, 0.5], "ingwer": [80, 1.8, 16, 0.8], "paprika": [30, 1, 5, 0.3], "zucchini": [20, 1.5, 2.5, 0.4], "brokkoli": [35, 3, 3, 0.4], "karotte": [36, 1, 7, 0.2], "kuerbis": [40, 1.5, 8, 0.2], "kartoffeln": [77, 2, 17, 0.1], "suesskartoffel": [86, 1.6, 20, 0.1], "spinat": [23, 2.9, 1, 0.4], "rucola": [25, 2.6, 2, 0.7], "cherry": [20, 1, 3, 0.3], "pilze": [22, 3, 0.5, 0.3], "gurke": [12, 0.6, 2, 0.1], "avocado": [160, 2, 2, 15], "fruehlingszw": [30, 2, 5, 0.3], "zitrone": [30, 0.7, 3, 0.3], "limette": [30, 0.7, 3, 0.3], "banane": [90, 1.1, 20, 0.3], "petersilie": [40, 3, 5, 0.5], "koriander": [25, 2, 4, 0.5], "basilikum": [25, 3, 3, 0.6], "skyr": [63, 11, 4, 0.2], "topfen": [70, 12, 4, 0.3], "joghurt": [45, 4.5, 5, 1], "huettenkaese": [100, 12, 3, 4.5], "feta": [260, 17, 0.5, 21], "mozzarella": [165, 19, 1, 9], "parmesan": [390, 33, 0, 28], "milch": [47, 3.4, 4.9, 1.5], "tofu": [130, 13, 1.5, 8], "eier": [140, 12.5, 0.7, 9.5], "huehnerschinken": [110, 20, 1, 2.5], "haehnchen": [110, 23, 0, 1.5], "faschiertes": [170, 21, 0, 10], "lachs": [200, 20, 0, 13], "thunfisch": [110, 25, 0, 1], "toast": [240, 9, 41, 3.5], "broetchen": [250, 9, 45, 3], "wraps": [300, 8, 48, 7], "hafer": [372, 13.5, 59, 7], "reis": [350, 7.5, 78, 0.6], "nudeln": [350, 13, 64, 2.5], "lasagne": [350, 12, 70, 1.5], "risottoreis": [350, 7, 79, 0.6], "couscous": [360, 12, 72, 1.5], "linsen": [340, 24, 50, 1.5], "mehl": [340, 12, 68, 2], "cornflakes": [380, 7, 84, 0.9], "staerke": [350, 0.3, 86, 0.1], "chia": [480, 17, 8, 31], "sesam": [580, 18, 10, 50], "walnuss": [650, 15, 10, 65], "erdnussmus": [600, 25, 15, 50], "tahini": [600, 20, 20, 55], "tomatendose": [22, 1.2, 3.5, 0.2], "passata": [30, 1.4, 5, 0.2], "kichererbsen": [120, 7, 15, 2.6], "kidney": [100, 7, 14, 0.5], "weissebohnen": [95, 7, 13, 0.5], "schwarzebohnen": [100, 7, 14, 0.5], "mais": [80, 3, 15, 1.2], "kokosmilch": [100, 1, 2, 10], "currypaste": [120, 2, 10, 8], "tomatenmark": [80, 4, 13, 0.5], "oel": [884, 0, 0, 100], "sojasauce": [60, 8, 6, 0.5], "honig": [300, 0.4, 80, 0], "essig": [20, 0, 1, 0], "senf": [100, 6, 5, 5], "bruehe": [200, 6, 30, 5], "backpulver": [0, 0, 0, 0], "salz": [0, 0, 0, 0], "kreuzkuemmel": [0, 0, 0, 0], "paprikapulver": [0, 0, 0, 0], "currypulver": [0, 0, 0, 0], "chili": [0, 0, 0, 0], "oregano": [0, 0, 0, 0], "zimt": [0, 0, 0, 0], "erbsen": [80, 5.5, 11, 0.5], "beeren": [40, 1, 7, 0.3], "spinattk": [23, 2.5, 1, 0.4], "garnelen": [80, 18, 0, 1]}}</script>
+<script>
+"use strict";
+const DB = JSON.parse(document.getElementById("db").textContent);
+const ING = DB.ingredients;
+const DEPTS = DB.depts.concat([["sonst", "Sonstiges"]]);
+const PROT = {
+  huelsen: ["Hülsenfrüchte", "veg"], tofu: ["Tofu", "veg"], ei: ["Ei", "veg"], milch: ["Milchprodukte", "veg"],
+  gefluegel: ["Geflügel", "fleisch"], fisch: ["Fisch", "fisch"], rot: ["Rotes Fleisch", "fleisch"]
+};
+const DEV = { herd: "Herd", ofen: "Backrohr", hlf: "Heißluftfritteuse", mixer: "Mixer" };
+const MEAL = { fruehstueck: "Frühstück", haupt: "Hauptgericht", snack: "Snack" };
+const isVeg = r => PROT[r.protein] && PROT[r.protein][1] === "veg";
+
+/* ---------- Icons ---------- */
+const ic = {
+  today: '<path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/>',
+  cart: '<path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/>',
+  box: '<path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M3 4h18v4H3zM10 12h4"/>',
+  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+  week: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M8 14h2M12 14h2M8 17h2"/>',
+  herd: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
+  ofen: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M11 6.5h.01"/><rect x="7" y="12" width="10" height="5" rx="1"/>',
+  hlf: '<path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="4"/><path d="M12 9v8M8 13h8M8 7h8"/>',
+  mixer: '<path d="M7 3h10l-1.5 11h-7z"/><path d="M8.5 14h7l1 7h-9z"/><path d="M12 17.5h.01"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" fill="currentColor" stroke="none"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  home: '<path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>'
+};
+const svg = (n, extra = "") => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${ic[n]}</svg>`;
+
+/* ---------- Helfer ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today = () => new Date().toLocaleDateString("sv");
+const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toLocaleDateString("sv"); };
+const diffDays = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5);
+const rid = () => Math.random().toString(36).slice(2, 10);
+const clone = o => JSON.parse(JSON.stringify(o));
+const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+const MON = ["Jän.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+const fmtDate = iso => { const d = new Date(iso + "T12:00:00"); return `${WD[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
+
+function frac(x) {
+  let q = Math.round(x * 4) / 4; if (q <= 0) q = 0.25;
+  const w = Math.floor(q), f = q - w;
+  const s = (w ? String(w) : "") + ({ 0: "", 0.25: "¼", 0.5: "½", 0.75: "¾" }[f]);
+  return s || "0";
+}
+function ingInfo(k, rec) {
+  if (ING[k]) return ING[k];
+  const c = rec && rec.ings && rec.ings.find(i => i.k === k);
+  return { name: (c && c.name) || k.replace(/^x:/, ""), unit: (c && c.u) || "g", g: 1, dept: "sonst", pack: (c && c.a) || 1, packLabel: "", shelf: 3, staple: false, custom: true };
+}
+function fmtAmt(info, a) {
+  if (info.unit === "prise") return info.name.startsWith("Salz") ? "nach Geschmack" : "1 Prise";
+  if (info.unit === "g" || info.unit === "ml") {
+    const r = a < 10 ? Math.round(a) : a < 100 ? Math.round(a / 5) * 5 : Math.round(a / 10) * 10;
+    return `${Math.max(r, 1)} ${info.unit}`;
+  }
+  if (info.unit === "stk") return `${frac(a)} Stk.`;
+  if (info.unit === "el") return `${frac(a)} EL`;
+  if (info.unit === "tl") return `${frac(a)} TL`;
+  if (info.unit === "zehe") return `${frac(a)} ${a > 1 ? "Zehen" : "Zehe"}`;
+  return `${frac(a)} ${esc(info.unit)}`;
+}
+
+/* ---------- Zustand & Speicher ---------- */
+const DEFAULT_STATE = () => ({
+  v: 1, settings: { weight: 65, shopMode: "heute" }, pantry: { zwiebel: true, salz: true },
+  leftovers: [], plan: [], checked: {}, stapleShop: [], extras: [], ratings: {}, training: null
+});
+let S = DEFAULT_STATE(), H = { entries: [] }, C = { recipes: [] };
+const store = { mode: "local", db: null, uid: null, refs: {}, last: {}, timers: {}, writing: {}, again: {}, dirty: {} };
+const docs = { state: () => S, history: () => H, custom: () => C };
+
+function lsGet(k) { try { const v = localStorage.getItem("kk_" + k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem("kk_" + k, JSON.stringify(v)); } catch (e) { } }
+function applyDoc(name, d) {
+  if (!d || typeof d !== "object") return;
+  if (name === "state") S = Object.assign(DEFAULT_STATE(), d);
+  if (name === "history") H = { entries: Array.isArray(d.entries) ? d.entries : [] };
+  if (name === "custom") C = { recipes: Array.isArray(d.recipes) ? d.recipes : [] };
+}
+function save(...names) {
+  for (const name of names) {
+    clearTimeout(store.timers[name]); store.dirty[name] = true;
+    store.timers[name] = setTimeout(() => { store.dirty[name] = false; flush(name); }, 500);
+  }
+}
+async function flush(name) {
+  const data = clone(docs[name]());
+  if (name === "history") data.entries = data.entries.filter(e => diffDays(e.d, today()) < 400);
+  const js = JSON.stringify(data);
+  lsSet(name, data);
+  if (store.mode !== "cloud") return;
+  if (js === store.last[name]) return;
+  if (store.writing[name]) { store.again[name] = true; return; }
+  store.writing[name] = true;
+  try { await store.refs[name].set(data); store.last[name] = js; setSync("cloud"); }
+  catch (e) { if (e && e.code === "quota_exceeded") toast("Speicher voll – bitte alte Einträge löschen."); else setSync("error"); }
+  store.writing[name] = false;
+  if (store.again[name]) { store.again[name] = false; flush(name); }
+}
+let syncState = "local";
+function setSync(s) { syncState = s; }
+
+async function initCloud() {
+  const cl = window.claude;
+  if (!cl || typeof cl.use !== "function") return;
+  try {
+    const [db, user] = await Promise.all([cl.use("db"), cl.use("user")]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    store.db = db; store.uid = uid;
+    for (const name of Object.keys(docs)) {
+      const ref = db.doc(`data/users/${uid}/${name}`);
+      store.refs[name] = ref;
+      const snap = await ref.get();
+      if (snap.exists) { const d = clone(snap.data()); store.last[name] = JSON.stringify(d); applyDoc(name, d); lsSet(name, d); }
+      else { store.mode = "cloud"; await flush(name); }
+    }
+    store.mode = "cloud"; setSync("cloud");
+    for (const name of Object.keys(docs)) {
+      store.refs[name].onSnapshot(s => {
+        if (!s.exists || s.metadata.hasPendingWrites) return;
+        const d = s.data(); const js = JSON.stringify(d);
+        if (js === store.last[name] || store.writing[name] || store.dirty[name]) return;
+        store.last[name] = js; applyDoc(name, clone(d)); lsSet(name, clone(d)); render();
+      }, () => { });
+    }
+    render();
+  } catch (e) { setSync("local"); }
+}
+
+/* ---------- Rezepte ---------- */
+let FR = [], FRstatus = "";
+function allRecipes() { const ov = new Set(FR.map(r => r.id)); return DB.recipes.filter(r => !ov.has(r.id)).concat(FR, C.recipes); }
+function slug(s) { return String(s).toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
+function normFileRecipe(x) {
+  if (!x || typeof x !== "object" || !x.name || !Array.isArray(x.ingredients || x.zutaten) || !Array.isArray(x.steps || x.schritte)) return null;
+  const ingLines = (x.ingredients || x.zutaten).map(String);
+  const stepLines = (x.steps || x.schritte).map(String).filter(Boolean);
+  const num = (v, d) => { const n = parseInt(v); return n > 0 ? n : d; };
+  const prep = num(x.prep, 15);
+  const r = {
+    id: (x.id && DB.recipes.some(d => d.id === x.id)) ? x.id : "f-" + (x.id ? slug(x.id) : slug(x.name)), fromFile: true, name: String(x.name).slice(0, 80),
+    meal: MEAL[x.meal] ? x.meal : "haupt", protein: PROT[x.protein] ? x.protein : "huelsen",
+    prep, total: num(x.total, prep), servings: num(x.servings, 1),
+    devices: (Array.isArray(x.devices) ? x.devices : []).filter(d => DEV[d]), cuisine: x.cuisine || "eigen",
+    tags: Array.isArray(x.tags) ? x.tags.map(String) : [], tip: x.tip ? String(x.tip) : "",
+    ings: parseIngs(ingLines.join("\n")),
+    steps: stepLines.map(t => { const m = t.match(/(\d+)\s*Min/i); return m ? { t, timer: parseInt(m[1]) } : { t }; })
+  };
+  const c = computeN(r);
+  const mp = parseInt(x.protein_g), mk = parseInt(x.kcal);
+  if (mp || mk || !c.known) r.manualN = { kcal: mk || c.n.kcal, p: mp || c.n.p, c: c.n.c, f: c.n.f };
+  else r.n = c.n;
+  return r;
+}
+async function loadFileRecipes() {
+  try {
+    const res = await fetch("rezepte.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    const j = await res.json();
+    const list = Array.isArray(j) ? j : j.recipes;
+    if (!Array.isArray(list)) throw new Error("format");
+    const out = [], bad = [];
+    list.forEach((x, i) => { const r = normFileRecipe(x); if (r) out.push(r); else bad.push(x && x.name ? x.name : "Nr. " + (i + 1)); });
+    FR = out; FRstatus = { n: out.length, bad };
+  } catch (e) { FR = []; FRstatus = { err: true }; }
+  render();
+}
+function R(id) { return allRecipes().find(r => r.id === id); }
+function nutr(r) {
+  if (r.n) return r.n;
+  return r.manualN || { kcal: 0, p: 0, c: 0, f: 0 };
+}
+function lastCooked(id) { let best = null; for (const e of H.entries) if (e.r === id && (!best || e.d > best)) best = e.d; return best; }
+function rating(id) { return S.ratings[id] || {}; }
+
+/* ---------- Woche & Ziele ---------- */
+function proteinGoal() { const w = Number(S.settings.weight) || 65; return [Math.round(w * 1.6), Math.round(w * 2.0)]; }
+function weekEntries(days = 7) { const t = today(); return H.entries.filter(e => { const d = diffDays(e.d, t); return d >= 0 && d < days; }); }
+function weekCounts() {
+  const mains = weekEntries().filter(e => e.meal === "haupt").map(e => R(e.r)).filter(Boolean);
+  const c = { n: mains.length, rot: 0, fleisch: 0, fisch: 0, huelsen: 0, veg: 0 };
+  for (const r of mains) {
+    if (r.protein === "rot") c.rot++;
+    if (r.protein === "rot" || r.protein === "gefluegel") c.fleisch++;
+    if (r.protein === "fisch") c.fisch++;
+    if (r.protein === "huelsen") c.huelsen++;
+    if (isVeg(r)) c.veg++;
+  }
+  return c;
+}
+function proteinOn(d) { return H.entries.filter(e => e.d === d).reduce((s, e) => { const r = R(e.r); return s + (r ? nutr(r).p : 0); }, 0); }
+
+/* ---------- Reste ---------- */
+function leftoverAmt(k) { return S.leftovers.filter(l => l.k === k).reduce((s, l) => s + l.a, 0); }
+function leftoverSoonest(k) { const ls = S.leftovers.filter(l => l.k === k).sort((a, b) => a.until < b.until ? -1 : 1); return ls[0]; }
+function needsOf(rec, por) {
+  const need = {};
+  for (const i of rec.ings) { if (i.opt) continue; need[i.k] = (need[i.k] || 0) + i.a * por / rec.servings; }
+  return need;
+}
+
+/* ---------- Vorschläge ---------- */
+let rerollSeed = 0; const shownBefore = new Set(); let lastShown = [];
+function suggest(meal, opt) {
+  const t = today();
+  const hist = H.entries.slice().sort((a, b) => a.d < b.d ? 1 : -1);
+  const lastMains = hist.filter(e => e.meal === meal).slice(0, 2).map(e => R(e.r)).filter(Boolean);
+  const wc = weekCounts();
+  const training = S.training === t;
+  let pool = allRecipes().filter(r => r.meal === meal && !rating(r.id).never);
+  if (opt.dev) pool = pool.filter(r => opt.dev === "keins" ? r.devices.length === 0 : r.devices.includes(opt.dev));
+  if (opt.quick) pool = pool.filter(r => r.total <= 20);
+  const scored = pool.map(r => {
+    let score = 0; const why = [];
+    const lc = lastCooked(r.id); const since = lc ? diffDays(lc, t) : Infinity;
+    if (since < 5) score -= 60;
+    let loBonus = 0;
+    for (const k of Object.keys(needsOf(r, r.servings))) {
+      const lo = leftoverSoonest(k); if (!lo) continue;
+      const left = diffDays(t, lo.until); const info = ingInfo(k, r);
+      const w = left <= 1 ? 30 : left <= 3 ? 16 : 7; loBonus += w;
+      why.push({ t: `Verwertet ${info.name} (${fmtAmt(info, leftoverAmt(k))} übrig${left <= 1 ? ", bald verbrauchen" : ""})`, w: 100 + w, g: true });
+    }
+    score += Math.min(loBonus, 60);
+    if (meal === "haupt") {
+      if (r.protein === "rot") { if (wc.rot >= 2) score -= 45; else if (wc.rot >= 1) score -= 12; }
+      if ((r.protein === "rot" || r.protein === "gefluegel") && wc.fleisch >= 4) score -= 25;
+      if (r.protein === "fisch" && wc.fisch < 2) { score += wc.fisch === 0 ? 16 : 8; why.push({ t: wc.fisch === 0 ? "Diese Woche noch kein Fisch" : "Erst 1× Fisch diese Woche", w: 60 }); }
+      if (r.protein === "huelsen" && wc.huelsen < 3) { score += 10; why.push({ t: `Hülsenfrüchte: diese Woche erst ${wc.huelsen}×`, w: 50, g: true }); }
+      if (isVeg(r) && wc.n >= 2 && wc.veg / wc.n < 0.5) { score += 7; why.push({ t: "Fleischlos, gut für deine Wochenbilanz", w: 40, g: true }); }
+      if (lastMains.some(m => m.protein === r.protein)) score -= 14;
+      if (lastMains.length >= 2 && lastMains.every(m => m.cuisine === r.cuisine)) score -= 8;
+    }
+    if (since === Infinity) { score += 5; why.push({ t: "Hast du noch nie gekocht", w: 10 }); }
+    else if (since >= 14) { score += 6; why.push({ t: `Zuletzt vor ${since} Tagen`, w: 15 }); }
+    const rt = rating(r.id);
+    if (rt.stars) score += (rt.stars - 3) * 6;
+    if (rt.fav) { score += 10; why.push({ t: "Einer deiner Favoriten", w: 30 }); }
+    const n = nutr(r);
+    if (training) {
+      if (n.p >= 40) { score += 8; why.push({ t: `${n.p} g Eiweiß für deinen Trainingstag`, w: 45, g: true }); }
+      if (n.c >= 70) score += 4;
+    } else if (n.p >= 45) { score += 3; why.push({ t: `${n.p} g Eiweiß pro Portion`, w: 20, g: true }); }
+    if (r.tags.includes("einfrieren") || r.servings > 1) why.push({ t: `Ergibt ${r.servings} Portionen – Rest für morgen`, w: 5 });
+    if (shownBefore.has(r.id)) score -= 30;
+    score += pseudo(r.id + rerollSeed + t) * 12;
+    why.sort((a, b) => b.w - a.w);
+    return { r, score, why: why.slice(0, 3) };
+  }).sort((a, b) => b.score - a.score);
+  const pick = [];
+  for (const s of scored) {
+    if (pick.length >= 3) break;
+    if (pick.length < 2 && pick.some(p => p.r.protein === s.r.protein) && scored.length > 6) continue;
+    pick.push(s);
+  }
+  for (const s of scored) { if (pick.length >= 3) break; if (!pick.includes(s)) pick.push(s); }
+  return pick;
+}
+function pseudo(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000; }
+
+/* ---------- Einkaufsliste ---------- */
+function shopRows() {
+  const need = {}, from = {};
+  for (const p of S.plan) {
+    const r = R(p.id); if (!r) continue;
+    const n = needsOf(r, p.por);
+    for (const k in n) { need[k] = (need[k] || 0) + n[k]; (from[k] = from[k] || []).push(r); }
+  }
+  const rows = [], stock = [];
+  for (const k in need) {
+    const info = ingInfo(k, from[k][0]);
+    if (info.unit === "prise" && S.pantry[k]) { stock.push({ k, info, why: "Vorrat" }); continue; }
+    if (info.staple) {
+      if (S.pantry[k] && !S.checked[k]) { stock.push({ k, info, why: "Vorrat" }); continue; }
+      rows.push({ k, info, staple: true, label: info.packLabel || "", need: need[k] });
+      continue;
+    }
+    const have = leftoverAmt(k);
+    const rest = need[k] - have;
+    if (rest <= 1e-6 && !S.checked[k]) { stock.push({ k, info, why: "Reste" }); continue; }
+    const r = Math.max(rest, 0);
+    const packs = Math.max(1, Math.ceil(r / info.pack - 0.1));
+    const label = info.custom ? fmtAmt(info, r) : info.unit === "stk" ? (info.pack === 1 ? `${packs} Stk.` : packs > 1 ? `${packs} × ${info.packLabel}` : info.packLabel) : packs > 1 ? `${packs} × ${info.packLabel}` : info.packLabel;
+    rows.push({ k, info, label, need: r, have, rec: from[k][0] });
+  }
+  for (const k of S.stapleShop) {
+    if (rows.some(x => x.k === k)) continue;
+    if (S.pantry[k] && !S.checked[k]) continue;
+    const info = ING[k]; if (!info) continue;
+    rows.push({ k, info, staple: true, label: info.packLabel, basis: true });
+  }
+  return { rows, stock };
+}
+function openShopCount() { const { rows } = shopRows(); return rows.filter(r => !S.checked[r.k]).length + S.extras.filter(e => !e.done).length; }
+function planRecipe(id, por) {
+  const r = R(id); if (!r) return;
+  por = por || r.servings;
+  if (S.settings.shopMode === "heute") { S.plan = [{ id, por }]; S.checked = {}; }
+  else if (!S.plan.some(p => p.id === id)) S.plan.push({ id, por });
+  save("state");
+}
+
+/* ---------- UI-Zustand ---------- */
+const ui = {
+  tab: ["heute", "einkauf", "vorrat", "rezepte", "woche"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "heute",
+  meal: new Date().getHours() < 11 ? "fruehstueck" : "haupt",
+  dev: null, quick: false, q: "", filter: null, sheet: null
+};
+let cook = null;
+
+/* ---------- Rendern ---------- */
+function render() {
+  const app = $("#app");
+  const fn = { heute: viewToday, einkauf: viewShop, vorrat: viewPantry, rezepte: viewRecipes, woche: viewWeek }[ui.tab];
+  app.innerHTML = `<div class="wrap">${fn()}</div>`;
+  renderNav();
+  if (ui.tab === "rezepte") renderRecipeList();
+  renderOverlay();
+}
+function renderNav() {
+  const cnt = openShopCount();
+  const t = today();
+  const soon = S.leftovers.filter(l => diffDays(t, l.until) <= 1).length;
+  const tabs = [["heute", "Heute", "today"], ["einkauf", "Einkauf", "cart", cnt], ["vorrat", "Reste", "box", soon], ["rezepte", "Rezepte", "book"], ["woche", "Woche", "week"]];
+  $("#nav").innerHTML = `<div class="in">${tabs.map(([id, l, i, b]) => `<button data-act="tab" data-id="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${svg(i)}${l}${b ? `<span class="badge num">${b}</span>` : ""}</button>`).join("")}</div>`;
+}
+function devIcons(r) { return r.devices.length ? r.devices.map(d => `<span title="${DEV[d]}">${svg(d)}${r.devices.length === 1 ? DEV[d] : ""}</span>`).join("") : `<span>ohne Kochen</span>`; }
+function protTag(r) { const p = PROT[r.protein]; if (!p) return ""; return `<span class="tag ${p[1]}">${p[0]}</span>`; }
+function macros(n) {
+  return `<div class="macros num"><div class="p"><b>${n.p}</b><small>g Eiweiß</small></div><div><b>${n.c}</b><small>g KH</small></div><div><b>${n.f}</b><small>g Fett</small></div><div><b>${n.kcal}</b><small>kcal</small></div></div>`;
+}
+
+function viewToday() {
+  const t = today();
+  const [pmin, pmax] = proteinGoal();
+  const pToday = proteinOn(t);
+  const training = S.training === t;
+  const sugg = suggest(ui.meal, { dev: ui.dev, quick: ui.quick });
+  lastShown = sugg.map(s => s.r.id);
+  const meals = S.leftovers.filter(l => l.meal);
+  const pct = Math.min(100, pToday / pmax * 100);
+  const devChips = [[null, "Alle"], ["herd", "Herd"], ["ofen", "Backrohr"], ["hlf", "Heißluft"], ["mixer", "Mixer"]];
+  return `
+  <div class="top"><div><div class="eyebrow">${fmtDate(t)}</div><h1>Was koche ich?</h1></div></div>
+  <div class="seg" role="group" aria-label="Mahlzeit">
+    <button data-act="meal" data-id="fruehstueck" aria-pressed="${ui.meal === "fruehstueck"}">Frühstück</button>
+    <button data-act="meal" data-id="haupt" aria-pressed="${ui.meal === "haupt"}">Hauptgericht</button>
+  </div>
+  <div class="chips" role="group" aria-label="Filter">
+    <button class="chip" data-act="training" aria-pressed="${training}">${svg("bolt")}Trainingstag</button>
+    <button class="chip" data-act="quick" aria-pressed="${ui.quick}">${svg("clock")}max. 20 Min.</button>
+    ${devChips.map(([d, l]) => `<button class="chip" data-act="dev" data-id="${d || ""}" aria-pressed="${ui.dev === d}">${d ? svg(d) : ""}${l}</button>`).join("")}
+  </div>
+  ${meals.map(m => { const r = R(m.meal); if (!r) return ""; const left = diffDays(t, m.until);
+    return `<div class="card" style="border:2px solid var(--green)"><div class="eyebrow" style="color:var(--green)">Schon gekocht · ${m.por} ${m.por > 1 ? "Portionen" : "Portion"} übrig</div>
+    <h3 style="font-size:20px">${esc(r.name)}</h3><div class="meta"><span>${left <= 0 ? "Heute essen" : left === 1 ? "Bis morgen essen" : `Hält noch ${left} Tage`}</span><span>${nutr(r).p} g Eiweiß</span></div>
+    <div class="row"><button class="btn dark grow" data-act="eatleft" data-id="${m.id}">${svg("check")}Aufwärmen & eintragen</button></div></div>`; }).join("")}
+  ${sugg.length ? sugg.map((s, i) => suggCard(s, i)).join("") : `<div class="card empty"><b>Keine Treffer</b>Mit diesen Filtern passt kein Rezept. Nimm einen Filter heraus.</div>`}
+  <button class="btn ghost" data-act="reroll">${svg("dice")}Andere Vorschläge</button>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3 style="font-size:18px">Eiweiß heute</h3><span class="num"><b>${pToday} g</b> <span class="muted small">von ${pmin}–${pmax} g</span></span></div>
+    <div class="bar"><i style="width:${pct}%"></i><span class="zone" style="left:${pmin / pmax * 100}%"></span></div>
+    <div class="small muted">${pToday >= pmin ? "Tagesziel erreicht." : `Noch ca. ${pmin - pToday} g. Snack-Ideen: 250 g Skyr (28 g), 250 g Magertopfen (30 g), 200 g Hüttenkäse (24 g), 2 Eier (15 g).`} Gezählt werden die Gerichte, die du als gekocht einträgst.</div>
+  </div>`;
+}
+function suggCard(s, i) {
+  const r = s.r, n = nutr(r);
+  return `<article class="card sugg">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div style="min-width:0"><div class="eyebrow">${i === 0 ? "Bester Vorschlag" : "Alternative"} · ${MEAL[r.meal]}</div><h3>${esc(r.name)}</h3></div>${protTag(r)}
+    </div>
+    <div class="meta"><span>${svg("clock")}${r.prep} Min. Arbeit${r.total > r.prep ? ` · ${r.total} gesamt` : ""}</span>${devIcons(r)}</div>
+    ${macros(n)}
+    ${s.why.length ? `<ul class="why">${s.why.map(w => `<li class="${w.g ? "g" : ""}">${esc(w.t)}</li>`).join("")}</ul>` : ""}
+    <div class="row">
+      <button class="btn primary grow" data-act="plan" data-id="${r.id}">${svg("cart")}Einkaufen</button>
+      <button class="btn dark grow" data-act="cook" data-id="${r.id}">Jetzt kochen</button>
+      <button class="iconbtn" style="width:46px;height:46px" data-act="detail" data-id="${r.id}" aria-label="Rezept ansehen">${svg("book")}</button>
+    </div>
+  </article>`;
+}
+
+function viewShop() {
+  const { rows, stock } = shopRows();
+  const mode = S.settings.shopMode;
+  const plan = S.plan.map(p => ({ p, r: R(p.id) })).filter(x => x.r);
+  const groups = DEPTS.map(([d, label]) => ({ d, label, items: rows.filter(r => r.info.dept === d).sort((a, b) => (!!S.checked[a.k]) - (!!S.checked[b.k])) })).filter(g => g.items.length);
+  const open = rows.filter(r => !S.checked[r.k]).length;
+  const missingBasis = Object.keys(ING).filter(k => ING[k].staple && !S.pantry[k] && !S.stapleShop.includes(k) && allRecipes().filter(r => r.ings.some(i => i.k === k)).length >= 3);
+  return `
+  <div class="top"><div><div class="eyebrow">${open ? `${open} offen` : "Alles erledigt"}</div><h1>Einkauf</h1></div></div>
+  <div class="seg" role="group" aria-label="Einkaufsart">
+    <button data-act="shopmode" data-id="heute" aria-pressed="${mode === "heute"}">Spontan für heute</button>
+    <button data-act="shopmode" data-id="mehr" aria-pressed="${mode === "mehr"}">Für 2–3 Tage</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:18px">Geplant</h3><button class="linkbtn" data-act="tab" data-id="${mode === "heute" ? "heute" : "rezepte"}">${svg("plus", 'style="width:16px;height:16px;vertical-align:-3px"')} Gericht wählen</button></div>
+    ${plan.length ? `<div class="list">${plan.map(({ p, r }) => `<div class="li"><div class="grow"><div class="name">${esc(r.name)}</div><div class="sub">${r.servings > 1 && p.por > 1 ? `${p.por} Portionen – ${p.por - 1} für später` : "1 Portion"}</div></div>
+      <div class="stepper"><button data-act="planpor" data-id="${r.id}" data-d="-1" aria-label="Weniger Portionen">−</button><b>${p.por}</b><button data-act="planpor" data-id="${r.id}" data-d="1" aria-label="Mehr Portionen">+</button></div>
+      <button class="iconbtn" data-act="unplan" data-id="${r.id}" aria-label="Aus Plan entfernen">${svg("x")}</button></div>`).join("")}</div>
+      ${plan.length === 1 ? `<button class="btn dark" data-act="cook" data-id="${plan[0].r.id}">Jetzt kochen</button>` : ""}`
+    : `<div class="small muted">${mode === "heute" ? "Wähl unter „Heute“ ein Gericht mit „Einkaufen“. Die Liste füllt sich dann von selbst." : "Füge unter „Heute“ oder „Rezepte“ mehrere Gerichte hinzu. Die Zutaten werden zusammengerechnet."}</div>`}
+  </div>
+  ${rows.length || S.extras.length ? `<div class="card"><div class="list">
+    ${groups.map(g => `<div class="dept"><span>${g.label}</span></div>${g.items.map(shopRow).join("")}`).join("")}
+    ${S.extras.length ? `<div class="dept"><span>Eigene Einträge</span></div>${S.extras.map(e => `<div class="li ${e.done ? "done" : ""}"><button class="check" role="checkbox" aria-checked="${!!e.done}" data-act="xcheck" data-id="${e.id}" aria-label="Abhaken">${svg("check")}</button><div class="grow"><div class="name">${esc(e.t)}</div></div><button class="iconbtn" data-act="xdel" data-id="${e.id}" aria-label="Löschen">${svg("x")}</button></div>`).join("")}` : ""}
+  </div>
+  ${rows.some(r => S.checked[r.k]) || S.extras.some(e => e.done) ? `<button class="btn ghost sm" data-act="shopdone">Abgehakte entfernen</button>` : ""}
+  </div>` : ""}
+  <form class="row" id="xform"><input class="search" style="flex:1;min-width:0" id="xtext" placeholder="Eigenen Eintrag hinzufügen (z. B. Klopapier)" autocomplete="off"><button class="btn" type="submit" aria-label="Hinzufügen">${svg("plus")}</button></form>
+  ${stock.length ? `<details class="card"><summary>Hast du schon (${stock.length})</summary><div class="small muted">${stock.map(s => `${esc(s.info.name)} <span class="tag">${s.why}</span>`).join(" · ")}</div></details>` : ""}
+  ${missingBasis.length ? `<div class="note">Dir fehlt noch Basisvorrat, den viele Rezepte brauchen (${missingBasis.slice(0, 6).map(k => esc(ING[k].name)).join(", ")}${missingBasis.length > 6 ? " …" : ""}). <button class="linkbtn" data-act="basis">Auf die Liste setzen</button></div>` : ""}`;
+}
+function shopRow(row) {
+  const done = !!S.checked[row.k];
+  const sub = row.staple ? (row.basis ? "Basisvorrat" : "Vorrat – hält lange") : `brauchst ${fmtAmt(row.info, row.need)}${row.have > 0 ? ` · ${fmtAmt(row.info, row.have)} schon da` : ""}`;
+  return `<div class="li ${done ? "done" : ""}">
+    <button class="check" role="checkbox" aria-checked="${done}" data-act="check" data-id="${esc(row.k)}" aria-label="${esc(row.info.name)} abhaken">${svg("check")}</button>
+    <div class="grow"><div class="name">${esc(row.info.name)}</div><div class="sub">${esc(row.label)}${row.label ? " · " : ""}${sub}</div></div>
+    ${done ? "" : `<button class="btn ghost sm" data-act="havehome" data-id="${esc(row.k)}">Hab ich</button>`}
+  </div>`;
+}
+
+function viewPantry() {
+  const t = today();
+  const items = S.leftovers.filter(l => l.k).sort((a, b) => a.until < b.until ? -1 : 1);
+  const meals = S.leftovers.filter(l => l.meal);
+  const staples = Object.keys(ING).filter(k => ING[k].staple);
+  const byDept = DEPTS.map(([d, l]) => ({ l, ks: staples.filter(k => ING[k].dept === d) })).filter(g => g.ks.length);
+  const names = Object.keys(ING).filter(k => !ING[k].staple).map(k => ING[k].name).sort((a, b) => a.localeCompare(b, "de"));
+  return `
+  <div class="top"><div><div class="eyebrow">Was weg muss, kommt zuerst</div><h1>Reste & Vorrat</h1></div></div>
+  ${meals.length ? `<div class="card"><h3 style="font-size:18px">Gekochte Portionen</h3><div class="list">${meals.map(m => { const r = R(m.meal); const left = diffDays(t, m.until);
+    return `<div class="li"><div class="grow"><div class="name">${esc(r ? r.name : "Gericht")}</div><div class="sub">${m.por} ${m.por > 1 ? "Portionen" : "Portion"} · ${daysLabel(left)}</div></div><button class="btn sm dark" data-act="eatleft" data-id="${m.id}">Gegessen</button><button class="iconbtn" data-act="lodel" data-id="${m.id}" aria-label="Entfernen">${svg("trash")}</button></div>`; }).join("")}</div></div>` : ""}
+  <div class="card">
+    <h3 style="font-size:18px">Angebrochene Zutaten</h3>
+    ${items.length ? `<div class="list">${items.map(l => { const info = ingInfo(l.k); const left = diffDays(t, l.until);
+      return `<div class="li"><div class="grow"><div class="name">${esc(info.name)}</div><div class="sub"><span class="tag ${left <= 0 ? "hot" : left <= 2 ? "warn" : ""}">${daysLabel(left)}</span> ${fmtAmt(info, l.a)}</div></div>
+      <button class="btn ghost sm" data-act="lohalf" data-id="${l.id}">Hälfte</button><button class="iconbtn" data-act="lodel" data-id="${l.id}" aria-label="Aufgebraucht">${svg("check")}</button></div>`; }).join("")}</div>`
+    : `<div class="small muted">Nichts offen. Wenn du ein Gericht als gekocht einträgst, rechnet die App aus, was von Packungen übrig bleibt, und zeigt es hier. Diese Reste bekommen bei den Vorschlägen Vorrang.</div>`}
+    <form id="loform" class="grid3" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end">
+      <label class="field">Zutat<input id="loname" list="lolist" placeholder="z. B. Skyr" autocomplete="off"></label>
+      <label class="field">Menge<input id="loamt" inputmode="decimal" placeholder="200"></label>
+      <button class="btn" type="submit" aria-label="Rest hinzufügen">${svg("plus")}</button>
+      <datalist id="lolist">${names.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+    </form>
+    <div class="small muted" id="lohint">Menge in g/ml, bei Stückware in Stück.</div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:18px">Vorrat, der lange hält</h3>
+    <div class="small muted">Antippen, was du zu Hause hast. Das kommt dann nicht auf die Einkaufsliste.</div>
+    ${byDept.map(g => `<div class="dept">${g.l}</div><div class="chips" style="flex-wrap:wrap;overflow:visible;margin:0;padding:0">${g.ks.map(k => `<button class="chip" data-act="pantry" data-id="${k}" aria-pressed="${!!S.pantry[k]}">${S.pantry[k] ? svg("check") : ""}${esc(ING[k].name)}</button>`).join("")}</div>`).join("")}
+  </div>`;
+}
+function daysLabel(left) { return left < 0 ? "abgelaufen?" : left === 0 ? "heute verbrauchen" : left === 1 ? "bis morgen" : `noch ${left} Tage`; }
+
+const FILTERS = [["fruehstueck", "Frühstück"], ["haupt", "Hauptgericht"], ["snack", "Snacks"], ["veg", "Vegetarisch"], ["fisch", "Fisch"], ["schnell", "≤ 20 Min."], ["hlf", "Heißluft"], ["ofen", "Backrohr"], ["vorbereiten", "Vorkochen"], ["fav", "Favoriten"], ["eigene", "Eigene"]];
+function viewRecipes() {
+  return `
+  <div class="top"><div><div class="eyebrow">${allRecipes().length} Rezepte</div><h1>Rezepte</h1></div><button class="btn sm dark" data-act="newrecipe">${svg("plus")}Eigenes</button></div>
+  <input class="search" id="q" type="search" placeholder="Suchen: Linsen, Curry, Lachs …" value="${esc(ui.q)}" autocomplete="off">
+  <div class="chips">${FILTERS.map(([id, l]) => `<button class="chip" data-act="filter" data-id="${id}" aria-pressed="${ui.filter === id}">${l}</button>`).join("")}</div>
+  <div class="rlist" id="rlist"></div>`;
+}
+function recipeMatches(r) {
+  const q = ui.q.trim().toLowerCase();
+  if (q && !(r.name.toLowerCase().includes(q) || r.ings.some(i => ingInfo(i.k, r).name.toLowerCase().includes(q)))) return false;
+  const f = ui.filter;
+  if (!f) return true;
+  if (MEAL[f]) return r.meal === f;
+  if (f === "veg") return isVeg(r);
+  if (f === "fisch") return r.protein === "fisch";
+  if (f === "schnell") return r.total <= 20;
+  if (f === "hlf" || f === "ofen") return r.devices.includes(f);
+  if (f === "vorbereiten") return r.tags.includes("vorbereiten");
+  if (f === "fav") return rating(r.id).fav;
+  if (f === "eigene") return !!r.custom || !!r.fromFile;
+  return true;
+}
+function renderRecipeList() {
+  const el = $("#rlist"); if (!el) return;
+  const list = allRecipes().filter(recipeMatches).sort((a, b) => a.name.localeCompare(b.name, "de"));
+  el.innerHTML = list.length ? list.map(r => { const n = nutr(r); const rt = rating(r.id);
+    return `<button class="ritem" data-act="detail" data-id="${r.id}"><div class="grow"><div class="name">${esc(r.name)}${rt.fav ? ` <span style="color:var(--accent)">♥</span>` : ""}${rt.never ? ` <span class="tag">ausgeblendet</span>` : ""}</div>
+    <div class="meta" style="font-size:13px"><span>${MEAL[r.meal]}</span><span>${r.total} Min.</span>${protTag(r)}${rt.stars ? `<span>${"★".repeat(rt.stars)}</span>` : ""}</div></div>
+    <div class="pbox"><b>${n.p}</b><small>g Eiweiß</small></div></button>`; }).join("")
+    : `<div class="empty"><b>Nichts gefunden</b>Versuch einen anderen Begriff oder entferne den Filter.</div>`;
+}
+
+function viewWeek() {
+  const t = today(); const wc = weekCounts();
+  const [pmin, pmax] = proteinGoal();
+  const mains = weekEntries().filter(e => e.meal === "haupt");
+  const avgP = mains.length ? Math.round(mains.reduce((s, e) => s + (R(e.r) ? nutr(R(e.r)).p : 0), 0) / mains.length) : 0;
+  const distinct = new Set(weekEntries().map(e => e.r)).size;
+  const vegShare = wc.n ? Math.round(wc.veg / wc.n * 100) : 0;
+  const st = (cls, val, label) => `<div class="stat ${cls}"><b>${val}</b><span>${label}</span></div>`;
+  const days = Array.from({ length: 7 }, (_, i) => addDays(t, -i));
+  return `
+  <div class="top"><div><div class="eyebrow">Letzte 7 Tage</div><h1>Deine Woche</h1></div></div>
+  <div class="stats">
+    ${st(wc.n === 0 ? "" : vegShare >= 50 ? "ok" : "warn", `${vegShare} %`, `fleischlos (Ziel: mind. 50 %)`)}
+    ${st(wc.huelsen >= 3 ? "ok" : wc.n ? "warn" : "", `${wc.huelsen}×`, "Hülsenfrüchte (Ziel: 3×)")}
+    ${st(wc.fisch >= 1 ? "ok" : wc.n ? "warn" : "", `${wc.fisch}×`, "Fisch (Ziel: 1–2×)")}
+    ${st(wc.rot > 2 ? "bad" : "ok", `${wc.rot}×`, "rotes Fleisch (max. 2×)")}
+    ${st(avgP >= 30 ? "ok" : mains.length ? "warn" : "", `${avgP} g`, "Eiweiß pro Hauptgericht")}
+    ${st(distinct >= 5 ? "ok" : "", distinct, "verschiedene Gerichte")}
+  </div>
+  <div class="card"><h3 style="font-size:18px">Tag für Tag</h3><div>
+    ${days.map(d => { const es = H.entries.filter(e => e.d === d); const p = proteinOn(d); const dt = new Date(d + "T12:00:00");
+      return `<div class="day"><div class="d">${d === t ? "Heute" : WD[dt.getDay()]}<small>${dt.getDate()}. ${MON[dt.getMonth()]}</small></div><div style="min-width:0">
+      ${es.length ? es.map(e => { const r = R(e.r); return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span>${esc(r ? r.name : "Gelöschtes Rezept")} <span class="muted small">${MEAL[e.meal] || ""}</span></span><button class="iconbtn" style="width:30px;height:30px" data-act="hdel" data-id="${e.id}" aria-label="Eintrag löschen">${svg("x")}</button></div>`; }).join("") + `<div class="small muted num">${p} g Eiweiß aus gekochten Gerichten</div>` : `<span class="muted small">Nichts eingetragen</span>`}
+      </div></div>`; }).join("")}
+  </div></div>
+  <div class="card">
+    <h3 style="font-size:18px">Einstellungen</h3>
+    <div class="grid2">
+      <label class="field">Körpergewicht (kg)<input id="weight" inputmode="decimal" value="${esc(S.settings.weight)}"></label>
+      <div class="field">Eiweißziel pro Tag<div class="num" style="font-weight:400;padding:10px 0">${pmin}–${pmax} g <span class="muted small">(1,6–2 g/kg)</span></div></div>
+    </div>
+    <div class="small muted">Richtwert für Sportler. Wenn du konkrete gesundheitliche Ziele hast, sprich mit einer Ernährungsberatung.</div>
+    ${FRstatus ? `<div class="note ${FRstatus.err || (FRstatus.bad && FRstatus.bad.length) ? "" : "g"} small">${FRstatus.err ? "rezepte.json konnte nicht gelesen werden. Meist fehlt ein Komma oder eine Klammer." : `rezepte.json: ${FRstatus.n} ${FRstatus.n === 1 ? "Rezept" : "Rezepte"} geladen.${FRstatus.bad.length ? ` Nicht lesbar: ${FRstatus.bad.map(esc).join(", ")}. Es fehlen Name, Zutaten oder Schritte.` : ""}`}</div>` : ""}
+    <div class="note g small">${store.mode === "cloud" ? "Deine Daten werden in deinem Konto gespeichert und sind auf Handy und PC gleich." : "Deine Daten werden gerade nur in diesem Browser gespeichert."}</div>
+    <details><summary>Sicherung</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <button class="btn" data-act="export">Daten kopieren</button>
+        <label class="field">Sicherung einfügen<textarea id="importtxt" rows="3" placeholder="Hier die kopierten Daten einfügen"></textarea></label>
+        <button class="btn ghost" data-act="import">Sicherung wiederherstellen</button>
+      </div>
+    </details>
+  </div>`;
+}
+
+/* ---------- Overlays ---------- */
+function renderOverlay() {
+  const ov = $("#ov");
+  if (cook) { ov.innerHTML = viewCook(); document.body.style.overflow = "hidden"; return; }
+  if (ui.sheet) { ov.innerHTML = ui.sheet.type === "detail" ? viewDetail() : ui.sheet.type === "finish" ? viewFinish() : viewEditor(); document.body.style.overflow = "hidden"; return; }
+  ov.innerHTML = ""; document.body.style.overflow = "";
+}
+function ingList(r, por, checkable) {
+  return `<div class="ingtable">${r.ings.map((i, idx) => { const info = ingInfo(i.k, r); const done = checkable && cook.got.has(idx);
+    return `<div class="li ${done ? "done" : ""}">${checkable ? `<button class="check" role="checkbox" aria-checked="${done}" data-act="cookgot" data-id="${idx}" aria-label="${esc(info.name)} bereit">${svg("check")}</button>` : ""}
+    <span class="amt">${fmtAmt(info, i.a * por / r.servings)}</span><span class="grow name" style="font-weight:400">${esc(info.name)}${i.opt ? ' <span class="tag">optional</span>' : ""}</span></div>`; }).join("")}</div>`;
+}
+function viewDetail() {
+  const r = R(ui.sheet.id); if (!r) { ui.sheet = null; return ""; }
+  const por = ui.sheet.por || r.servings; const n = nutr(r); const rt = rating(r.id);
+  return `<div class="ov" role="dialog" aria-label="${esc(r.name)}">
+    <div class="ovhead"><button class="iconbtn" data-act="close" aria-label="Zurück">${svg("back")}</button><h2>${esc(r.name)}</h2></div>
+    <div class="wrap">
+      <div class="meta"><span>${MEAL[r.meal]}</span><span>${svg("clock")}${r.prep} Min. Arbeit · ${r.total} gesamt</span>${devIcons(r)}${protTag(r)}</div>
+      ${macros(n)}<div class="small muted" style="margin-top:-10px">pro Portion, geschätzt aus Standardwerten</div>
+      ${r.tip ? `<div class="note g">${esc(r.tip)}</div>` : ""}
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="font-size:18px">Zutaten</h3>
+        <div class="stepper"><button data-act="detpor" data-d="-1" aria-label="Weniger Portionen">−</button><b>${por}</b><button data-act="detpor" data-d="1" aria-label="Mehr Portionen">+</button></div></div>
+        ${ingList(r, por, false)}
+      </div>
+      <div class="card"><h3 style="font-size:18px">Zubereitung</h3><ol class="steps" style="gap:8px">${r.steps.map(s => `<li style="font-size:16px;box-shadow:none;background:var(--surface-2)">${esc(s.t)}</li>`).join("")}</ol></div>
+      <div class="card">
+        <h3 style="font-size:18px">Deine Bewertung</h3>
+        <div class="stars">${[1, 2, 3, 4, 5].map(i => `<button data-act="rate" data-id="${r.id}" data-d="${i}" aria-pressed="${(rt.stars || 0) >= i}" aria-label="${i} Sterne">${svg("star")}</button>`).join("")}</div>
+        <div class="row"><button class="btn sm ${rt.fav ? "primary" : "ghost"}" data-act="fav" data-id="${r.id}">${svg("heart")}${rt.fav ? "Favorit" : "Als Favorit"}</button>
+        <button class="btn sm ghost" data-act="never" data-id="${r.id}">${rt.never ? "Wieder vorschlagen" : "Nie wieder vorschlagen"}</button>
+        ${r.custom ? `<button class="btn sm ghost" data-act="editrecipe" data-id="${r.id}">${svg("edit")}Bearbeiten</button>` : ""}</div>
+      </div>
+    </div>
+    <div class="dock"><div class="in"><button class="btn primary grow" data-act="plan" data-id="${r.id}" data-por="${por}">${svg("cart")}${S.settings.shopMode === "heute" ? "Einkaufen" : "Zur Liste"}</button><button class="btn dark grow" data-act="cook" data-id="${r.id}" data-por="${por}">Jetzt kochen</button></div></div>
+  </div>`;
+}
+function viewCook() {
+  const r = R(cook.id);
+  return `<div class="ov" role="dialog" aria-label="Kochen: ${esc(r.name)}">
+    <div class="ovhead"><button class="iconbtn" data-act="cookclose" aria-label="Kochen beenden">${svg("x")}</button><h2>${esc(r.name)}</h2>
+      <div class="stepper"><button data-act="cookpor" data-d="-1" aria-label="Weniger Portionen">−</button><b>${cook.por}</b><button data-act="cookpor" data-d="1" aria-label="Mehr Portionen">+</button></div></div>
+    <div class="wrap">
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:18px">Bereitstellen</h3><span class="small muted">${cook.por} ${cook.por > 1 ? "Portionen" : "Portion"}</span></div>${ingList(r, cook.por, true)}</div>
+      <ol class="steps">${r.steps.map((s, i) => `<li class="${cook.done.has(i) ? "done" : ""}"><span>${esc(s.t)}</span>
+        <div class="row">${s.timer ? `<button class="btn sm primary" data-act="timer" data-id="${i}">${svg("timer")}${s.timer} Min. Timer</button>` : ""}
+        <button class="btn sm ghost" data-act="stepdone" data-id="${i}">${cook.done.has(i) ? "Rückgängig" : "Erledigt"}</button></div></li>`).join("")}</ol>
+      ${r.tip ? `<div class="note g">${esc(r.tip)}</div>` : ""}
+    </div>
+    <div class="dock"><div class="in"><button class="btn primary grow" data-act="finish">${svg("check")}Fertig gekocht</button></div></div>
+  </div>`;
+}
+function cookOutcome(r, por) {
+  const lo = clone(S.leftovers); const items = []; const t = today();
+  const need = needsOf(r, por);
+  for (const k in need) {
+    const info = ingInfo(k, r); if (info.staple) continue;
+    let n = need[k];
+    for (const l of lo.filter(l => l.k === k).sort((a, b) => a.until < b.until ? -1 : 1)) { const take = Math.min(l.a, n); l.a -= take; n -= take; if (n <= 1e-6) break; }
+    if (n > 1e-6 && !info.custom) {
+      const packs = Math.max(1, Math.ceil(n / info.pack - 0.1));
+      const rem = packs * info.pack - n;
+      const min = info.unit === "stk" ? 0.25 : Math.max(5, info.pack * 0.12);
+      if (rem >= min) items.push({ k, a: info.unit === "stk" ? Math.round(rem * 4) / 4 : Math.round(rem), until: addDays(t, info.shelf), on: true });
+    }
+  }
+  return { lo: lo.filter(l => l.meal || l.a > (ingInfo(l.k).unit === "stk" ? 0.1 : 2)), items };
+}
+function viewFinish() {
+  const f = ui.sheet; const r = R(f.id);
+  return `<div class="ov" role="dialog" aria-label="Gekocht">
+    <div class="ovhead"><button class="iconbtn" data-act="finishback" aria-label="Zurück">${svg("back")}</button><h2>Gekocht: ${esc(r.name)}</h2></div>
+    <div class="wrap">
+      <div class="card"><h3 style="font-size:18px">Wie war's?</h3>
+        <div class="stars">${[1, 2, 3, 4, 5].map(i => `<button data-act="frate" data-d="${i}" aria-pressed="${f.stars >= i}" aria-label="${i} Sterne">${svg("star")}</button>`).join("")}</div></div>
+      ${f.por > 1 ? `<div class="card"><h3 style="font-size:18px">Portionen für später</h3><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="small muted">Halten im Kühlschrank ca. 3 Tage</span>
+        <div class="stepper"><button data-act="fleft" data-d="-1" aria-label="Weniger">−</button><b>${f.left}</b><button data-act="fleft" data-d="1" aria-label="Mehr">+</button></div></div></div>` : ""}
+      <div class="card"><h3 style="font-size:18px">Was ist übrig geblieben?</h3>
+        ${f.items.length ? `<div class="small muted">Geschätzt aus üblichen Packungsgrößen. Abwählen, was du nicht mehr hast.</div><div class="list">${f.items.map((it, i) => { const info = ingInfo(it.k);
+          return `<div class="li"><button class="check" role="checkbox" aria-checked="${it.on}" data-act="fitem" data-id="${i}" aria-label="${esc(info.name)} übrig">${svg("check")}</button><div class="grow"><div class="name">${esc(info.name)}</div><div class="sub">${fmtAmt(info, it.a)} · ${daysLabel(diffDays(today(), it.until))}</div></div></div>`; }).join("")}</div>`
+        : `<div class="small muted">Keine angebrochenen Packungen. Alles aufgebraucht.</div>`}
+      </div>
+    </div>
+    <div class="dock"><div class="in"><button class="btn primary grow" data-act="finishsave">${svg("check")}Eintragen</button></div></div>
+  </div>`;
+}
+
+/* ---------- Eigenes Rezept ---------- */
+function viewEditor() {
+  const e = ui.sheet.draft;
+  const names = Object.keys(ING).map(k => ING[k].name).sort((a, b) => a.localeCompare(b, "de"));
+  return `<div class="ov" role="dialog" aria-label="Eigenes Rezept">
+    <div class="ovhead"><button class="iconbtn" data-act="close" aria-label="Abbrechen">${svg("x")}</button><h2>${e.id ? "Rezept bearbeiten" : "Eigenes Rezept"}</h2></div>
+    <form class="wrap" id="editor">
+      <label class="field">Name<input id="e_name" required value="${esc(e.name)}" placeholder="z. B. Omas Linseneintopf"></label>
+      <div class="grid2">
+        <label class="field">Mahlzeit<select id="e_meal">${Object.entries(MEAL).map(([k, l]) => `<option value="${k}" ${e.meal === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+        <label class="field">Eiweißquelle<select id="e_prot">${Object.entries(PROT).map(([k, l]) => `<option value="${k}" ${e.protein === k ? "selected" : ""}>${l[0]}</option>`).join("")}</select></label>
+      </div>
+      <div class="grid3">
+        <label class="field">Arbeit (Min.)<input id="e_prep" inputmode="numeric" value="${esc(e.prep)}"></label>
+        <label class="field">Gesamt (Min.)<input id="e_total" inputmode="numeric" value="${esc(e.total)}"></label>
+        <label class="field">Portionen<input id="e_srv" inputmode="numeric" value="${esc(e.servings)}"></label>
+      </div>
+      <div class="field">Geräte<div class="chips" style="flex-wrap:wrap;margin:0;padding:0">${Object.entries(DEV).map(([k, l]) => `<button type="button" class="chip" data-act="edev" data-id="${k}" aria-pressed="${e.devices.includes(k)}">${svg(k)}${l}</button>`).join("")}</div></div>
+      <label class="field">Zutaten – eine pro Zeile, Menge zuerst<textarea id="e_ings" rows="7" placeholder="200 g Rote Linsen&#10;1 Stk. Zwiebel&#10;400 g Tomaten gehackt (Dose)">${esc(e.ingText)}</textarea></label>
+      <div class="small muted">Bekannte Zutaten (siehe Vorschläge) bekommen automatisch Nährwerte und Packungsgrößen. Einheiten: g, ml, Stk., EL, TL, Zehe.</div>
+      <datalist id="inglist">${names.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+      <label class="field">Schritte – einer pro Zeile<textarea id="e_steps" rows="6" placeholder="Zwiebel hacken und anbraten.&#10;Linsen und Tomaten dazu, 20 Min. köcheln.">${esc(e.stepText)}</textarea></label>
+      <div class="grid2">
+        <label class="field">Eiweiß pro Portion (g)<input id="e_p" inputmode="numeric" value="${esc(e.mp || "")}" placeholder="wird berechnet"></label>
+        <label class="field">kcal pro Portion<input id="e_kcal" inputmode="numeric" value="${esc(e.mkcal || "")}" placeholder="wird berechnet"></label>
+      </div>
+      <div class="small muted">Nur ausfüllen, wenn Zutaten nicht erkannt werden. Sonst rechnet die App selbst.</div>
+      <div class="row"><button class="btn primary grow" type="submit">Speichern</button>${e.id ? `<button class="btn ghost" type="button" data-act="delrecipe" data-id="${e.id}">${svg("trash")}Löschen</button>` : ""}</div>
+    </form>
+  </div>`;
+}
+const UNIT_ALIASES = { g: "g", gramm: "g", kg: "kg", ml: "ml", l: "l", liter: "l", stk: "stk", "stk.": "stk", stück: "stk", el: "el", tl: "tl", zehe: "zehe", zehen: "zehe", prise: "prise" };
+function normName(s) { return s.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-zäöüß ]/g, " ").replace(/\s+/g, " ").trim(); }
+function findIng(name) {
+  const n = normName(name); if (!n) return null;
+  let best = null;
+  for (const k in ING) { const m = normName(ING[k].name); if (m === n) return k; if (!best && (m.startsWith(n) || n.startsWith(m) || m.split(" ").includes(n))) best = k; }
+  return best;
+}
+function parseIngs(text) {
+  const out = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim(); if (!line) continue;
+    const m = line.match(/^([\d.,½¼¾\/]+)?\s*([a-zA-ZäöüÄÖÜ.]+)?\s+(.*)$/);
+    let amt = 1, unit = null, name = line;
+    if (m && m[1]) {
+      amt = parseFloat(m[1].replace(",", ".").replace("½", ".5").replace("¼", ".25").replace("¾", ".75")) || 1;
+      const u = m[2] && UNIT_ALIASES[m[2].toLowerCase()];
+      if (u) { unit = u; name = m[3]; } else { name = ((m[2] || "") + " " + m[3]).trim(); }
+    }
+    if (unit === "kg") { amt *= 1000; unit = "g"; } if (unit === "l") { amt *= 1000; unit = "ml"; }
+    const k = findIng(name);
+    if (k) {
+      const info = ING[k]; let a = amt;
+      if (unit && unit !== info.unit) { if ((unit === "g" || unit === "ml") && info.g) a = amt / info.g; else if ((info.unit === "g" || info.unit === "ml") && unit === "stk") a = amt * 100; }
+      out.push({ k, a: Math.round(a * 100) / 100 });
+    } else out.push({ k: "x:" + name.slice(0, 40), a: amt, u: unit || "stk", name: name.slice(0, 60) });
+  }
+  return out;
+}
+function computeN(r) {
+  let t = [0, 0, 0, 0], known = true;
+  for (const i of r.ings) {
+    const info = ING[i.k]; if (!info) { known = false; continue; }
+    const raw = DB.nutri && DB.nutri[i.k]; if (!raw) continue;
+    const g = i.a * info.g; for (let j = 0; j < 4; j++) t[j] += g * raw[j] / 100;
+  }
+  const s = r.servings || 1;
+  return { n: { kcal: Math.round(t[0] / s), p: Math.round(t[1] / s), c: Math.round(t[2] / s), f: Math.round(t[3] / s) }, known };
+}
+function openEditor(id) {
+  const r = id ? R(id) : null;
+  ui.sheet = { type: "editor", draft: r ? {
+    id: r.id, name: r.name, meal: r.meal, protein: r.protein, prep: r.prep, total: r.total, servings: r.servings, devices: r.devices.slice(),
+    ingText: r.ings.map(i => { const info = ingInfo(i.k, r); return `${fmtAmt(info, i.a)} ${info.name}`; }).join("\n"),
+    stepText: r.steps.map(s => s.t).join("\n"), mp: r.manualN ? r.manualN.p : "", mkcal: r.manualN ? r.manualN.kcal : ""
+  } : { name: "", meal: "haupt", protein: "huelsen", prep: 15, total: 25, servings: 1, devices: ["herd"], ingText: "", stepText: "" } };
+  render();
+}
+function saveEditor() {
+  const d = ui.sheet.draft; const v = id => $("#" + id).value;
+  const r = {
+    id: d.id || "c-" + rid(), custom: true, name: v("e_name").trim() || "Mein Rezept", meal: v("e_meal"), protein: v("e_prot"),
+    prep: parseInt(v("e_prep")) || 15, total: parseInt(v("e_total")) || parseInt(v("e_prep")) || 20, servings: Math.max(1, parseInt(v("e_srv")) || 1),
+    devices: d.devices, cuisine: "eigen", tags: [], ings: parseIngs(v("e_ings")),
+    steps: v("e_steps").split("\n").map(s => s.trim()).filter(Boolean).map(t => ({ t }))
+  };
+  const tm = r.steps.map(s => s.t.match(/(\d+)\s*Min/i)); r.steps.forEach((s, i) => { if (tm[i]) s.timer = parseInt(tm[i][1]); });
+  const c = computeN(r);
+  const mp = parseInt(v("e_p")), mk = parseInt(v("e_kcal"));
+  if (mp || mk || !c.known) { r.manualN = { kcal: mk || c.n.kcal, p: mp || c.n.p, c: c.n.c, f: c.n.f }; } else r.n = c.n;
+  if (r.manualN && !mp && !mk) r.n = c.n;
+  const idx = C.recipes.findIndex(x => x.id === r.id);
+  if (idx >= 0) C.recipes[idx] = r; else C.recipes.push(r);
+  save("custom"); ui.sheet = { type: "detail", id: r.id }; toast("Rezept gespeichert"); render();
+}
+
+/* ---------- Timer ---------- */
+const timers = []; let audioCtx = null;
+function startTimer(label, min) {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { }
+  timers.push({ id: rid(), label, end: Date.now() + min * 60000, ring: false });
+  renderTimers();
+}
+function beep() {
+  if (!audioCtx) return;
+  try { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 880; g.gain.value = 0.15; o.start(); o.stop(audioCtx.currentTime + 0.35); } catch (e) { }
+}
+function renderTimers() {
+  const el = $("#timers");
+  el.innerHTML = timers.map(t => { const left = Math.max(0, Math.round((t.end - Date.now()) / 1000));
+    return `<div class="timer ${t.ring ? "ring" : ""}">${svg("timer", 'style="width:18px;height:18px"')}<span>${t.ring ? "Fertig: " : ""}${esc(t.label)}${t.ring ? "" : ` · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`}</span><button data-act="timeroff" data-id="${t.id}">${t.ring ? "OK" : "Stopp"}</button></div>`; }).join("");
+}
+setInterval(() => {
+  if (!timers.length) return;
+  for (const t of timers) if (!t.ring && Date.now() >= t.end) { t.ring = true; try { navigator.vibrate && navigator.vibrate([300, 150, 300]); } catch (e) { } }
+  if (timers.some(t => t.ring)) beep();
+  renderTimers();
+}, 1000);
+let wakeLock = null;
+async function keepAwake(on) {
+  try { if (on && navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen"); else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) { }
+}
+document.addEventListener("visibilitychange", () => { if (cook && document.visibilityState === "visible") keepAwake(true); });
+
+/* ---------- Aktionen ---------- */
+let toastT;
+function toast(msg) { let el = $(".toast"); if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); } el.textContent = msg; clearTimeout(toastT); toastT = setTimeout(() => el.remove(), 2400); }
+function addLeftover(k, a, until) {
+  const ex = S.leftovers.find(l => l.k === k);
+  if (ex) { ex.a += a; if (until < ex.until) ex.until = until; } else S.leftovers.push({ id: rid(), k, a, until });
+}
+function openCook(id, por) {
+  const r = R(id); if (!r) return;
+  cook = { id, por: por || (S.plan.find(p => p.id === id) || {}).por || r.servings, got: new Set(), done: new Set() };
+  ui.sheet = null; keepAwake(true); render(); window.scrollTo(0, 0);
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id, d = Number(b.dataset.d || 0);
+  const t = today();
+  switch (act) {
+    case "tab": ui.tab = id; ui.sheet = null; history.replaceState(null, "", "#" + id); render(); window.scrollTo(0, 0); break;
+    case "meal": ui.meal = id; shownBefore.clear(); render(); break;
+    case "training": S.training = S.training === t ? null : t; save("state"); render(); break;
+    case "quick": ui.quick = !ui.quick; render(); break;
+    case "dev": ui.dev = id || null; render(); break;
+    case "reroll": lastShown.forEach(x => shownBefore.add(x)); rerollSeed++; render(); window.scrollTo(0, 0); break;
+    case "plan": planRecipe(id, Number(b.dataset.por) || undefined); ui.sheet = null; toast(S.settings.shopMode === "heute" ? "Einkaufsliste erstellt" : "Zur Einkaufsliste hinzugefügt");
+      if (S.settings.shopMode === "heute") { ui.tab = "einkauf"; history.replaceState(null, "", "#einkauf"); } render(); window.scrollTo(0, 0); break;
+    case "cook": openCook(id, Number(b.dataset.por) || undefined); break;
+    case "detail": ui.sheet = { type: "detail", id }; render(); break;
+    case "close": ui.sheet = null; render(); break;
+    case "detpor": ui.sheet.por = Math.max(1, (ui.sheet.por || R(ui.sheet.id).servings) + d); render(); break;
+    case "shopmode": S.settings.shopMode = id; if (id === "heute" && S.plan.length > 1) S.plan = S.plan.slice(-1); save("state"); render(); break;
+    case "planpor": { const p = S.plan.find(p => p.id === id); if (p) { p.por = Math.max(1, p.por + d); save("state"); render(); } break; }
+    case "unplan": S.plan = S.plan.filter(p => p.id !== id); save("state"); render(); break;
+    case "check": { if (S.checked[id]) delete S.checked[id]; else { S.checked[id] = true; if (ING[id] && ING[id].staple) { S.pantry[id] = true; S.stapleShop = S.stapleShop.filter(k => k !== id); } } save("state"); render(); break; }
+    case "havehome": { const info = ingInfo(id); if (info.staple) { S.pantry[id] = true; S.stapleShop = S.stapleShop.filter(k => k !== id); }
+      else { const row = shopRows().rows.find(r => r.k === id); addLeftover(id, row ? row.need : info.pack, addDays(t, Math.min(info.shelf, 5))); }
+      save("state"); toast(`${info.name}: als vorhanden gemerkt`); render(); break; }
+    case "shopdone": for (const k in S.checked) delete S.checked[k]; S.extras = S.extras.filter(x => !x.done); save("state"); render(); break;
+    case "xcheck": { const x = S.extras.find(x => x.id === id); if (x) x.done = !x.done; save("state"); render(); break; }
+    case "xdel": S.extras = S.extras.filter(x => x.id !== id); save("state"); render(); break;
+    case "basis": { const add = Object.keys(ING).filter(k => ING[k].staple && !S.pantry[k] && allRecipes().filter(r => r.ings.some(i => i.k === k)).length >= 3); S.stapleShop = Array.from(new Set(S.stapleShop.concat(add))); save("state"); render(); break; }
+    case "pantry": if (S.pantry[id]) delete S.pantry[id]; else S.pantry[id] = true; save("state"); render(); break;
+    case "lodel": S.leftovers = S.leftovers.filter(l => l.id !== id); save("state"); render(); break;
+    case "lohalf": { const l = S.leftovers.find(l => l.id === id); if (l) { const info = ingInfo(l.k); l.a = info.unit === "stk" ? Math.round(l.a / 2 * 4) / 4 : Math.round(l.a / 2); if (l.a <= 0) S.leftovers = S.leftovers.filter(x => x !== l); } save("state"); render(); break; }
+    case "eatleft": { const l = S.leftovers.find(l => l.id === id); if (!l) break; const r = R(l.meal);
+      H.entries.push({ id: rid(), d: t, r: l.meal, meal: r ? r.meal : "haupt", por: 1, left: true }); l.por--; if (l.por <= 0) S.leftovers = S.leftovers.filter(x => x !== l);
+      save("state", "history"); toast("Eingetragen. Guten Appetit!"); render(); break; }
+    case "filter": ui.filter = ui.filter === id ? null : id; render(); break;
+    case "rate": { const rt = S.ratings[id] = S.ratings[id] || {}; rt.stars = rt.stars === d ? 0 : d; save("state"); render(); break; }
+    case "fav": { const rt = S.ratings[id] = S.ratings[id] || {}; rt.fav = !rt.fav; save("state"); render(); break; }
+    case "never": { const rt = S.ratings[id] = S.ratings[id] || {}; rt.never = !rt.never; save("state"); toast(rt.never ? "Wird nicht mehr vorgeschlagen" : "Wird wieder vorgeschlagen"); render(); break; }
+    case "newrecipe": openEditor(null); break;
+    case "editrecipe": openEditor(id); break;
+    case "edev": { const dv = ui.sheet.draft.devices; const i = dv.indexOf(id); if (i >= 0) dv.splice(i, 1); else dv.push(id); b.setAttribute("aria-pressed", i < 0); break; }
+    case "delrecipe": if (b.dataset.confirm) { C.recipes = C.recipes.filter(r => r.id !== id); S.plan = S.plan.filter(p => p.id !== id); save("custom", "state"); ui.sheet = null; toast("Rezept gelöscht"); render(); }
+      else { b.dataset.confirm = "1"; b.innerHTML = "Wirklich löschen?"; } break;
+    case "cookclose": cook = null; keepAwake(false); render(); break;
+    case "cookpor": cook.por = Math.max(1, cook.por + d); render(); break;
+    case "cookgot": { const i = Number(id); cook.got.has(i) ? cook.got.delete(i) : cook.got.add(i); render(); break; }
+    case "stepdone": { const i = Number(id); cook.done.has(i) ? cook.done.delete(i) : cook.done.add(i); render(); break; }
+    case "timer": { const r = R(cook.id); const s = r.steps[Number(id)]; startTimer(`Schritt ${Number(id) + 1}`, s.timer); toast(`Timer läuft: ${s.timer} Min.`); break; }
+    case "timeroff": { const i = timers.findIndex(x => x.id === id); if (i >= 0) timers.splice(i, 1); renderTimers(); break; }
+    case "finish": { const r = R(cook.id); const o = cookOutcome(r, cook.por); ui.sheet = { type: "finish", id: cook.id, por: cook.por, left: cook.por - 1, stars: rating(cook.id).stars || 0, items: o.items, lo: o.lo }; const keep = cook; cook = null; ui.sheet.cook = keep; keepAwake(false); render(); window.scrollTo(0, 0); break; }
+    case "finishback": cook = ui.sheet.cook; ui.sheet = null; keepAwake(true); render(); break;
+    case "frate": ui.sheet.stars = ui.sheet.stars === d ? 0 : d; render(); break;
+    case "fleft": ui.sheet.left = Math.min(ui.sheet.por - 1, Math.max(0, ui.sheet.left + d)); render(); break;
+    case "fitem": { const it = ui.sheet.items[Number(id)]; it.on = !it.on; render(); break; }
+    case "finishsave": {
+      const f = ui.sheet; const r = R(f.id);
+      S.leftovers = f.lo;
+      for (const it of f.items) if (it.on) addLeftover(it.k, it.a, it.until);
+      if (f.left > 0) S.leftovers.push({ id: rid(), meal: f.id, por: f.left, until: addDays(t, 3) });
+      H.entries.push({ id: rid(), d: t, r: f.id, meal: r.meal, por: f.por });
+      if (f.stars) { (S.ratings[f.id] = S.ratings[f.id] || {}).stars = f.stars; }
+      S.plan = S.plan.filter(p => p.id !== f.id);
+      const still = new Set(shopRows().rows.map(x => x.k)); for (const k in S.checked) if (!still.has(k)) delete S.checked[k];
+      ui.sheet = null; ui.tab = "heute"; history.replaceState(null, "", "#heute");
+      save("state", "history"); toast("Eingetragen. Guten Appetit!"); render(); window.scrollTo(0, 0); break; }
+    case "hdel": H.entries = H.entries.filter(x => x.id !== id); save("history"); render(); break;
+    case "export": { const txt = JSON.stringify({ kochkompass: 1, state: S, history: H, custom: C });
+      const ok = () => toast("Kopiert. Füge es z. B. in eine Notiz ein.");
+      try { navigator.clipboard.writeText(txt).then(ok, () => { $("#importtxt").value = txt; $("#importtxt").select(); toast("Text markiert – jetzt kopieren"); }); } catch (err) { $("#importtxt").value = txt; $("#importtxt").select(); } break; }
+    case "import": { try { const o = JSON.parse($("#importtxt").value); if (!o.kochkompass) throw 0; applyDoc("state", o.state); applyDoc("history", o.history); applyDoc("custom", o.custom); save("state", "history", "custom"); toast("Sicherung wiederhergestellt"); render(); } catch (err) { toast("Das ist keine gültige Sicherung."); } break; }
+  }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "q") { ui.q = e.target.value; renderRecipeList(); }
+  if (e.target.id === "weight") { const w = parseFloat(e.target.value.replace(",", ".")); if (w > 30 && w < 250) { S.settings.weight = w; save("state"); } }
+});
+document.addEventListener("change", e => { if (e.target.id === "weight") render(); });
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  if (e.target.id === "xform") { const v = $("#xtext").value.trim(); if (v) { S.extras.push({ id: rid(), t: v.slice(0, 80), done: false }); save("state"); render(); } }
+  if (e.target.id === "loform") {
+    const name = $("#loname").value.trim(); const a = parseFloat(($("#loamt").value || "").replace(",", "."));
+    const k = Object.keys(ING).find(k => ING[k].name.toLowerCase() === name.toLowerCase()) || findIng(name);
+    if (!k) { $("#lohint").textContent = "Diese Zutat kenne ich nicht. Wähl eine aus der Vorschlagsliste."; return; }
+    const info = ING[k]; const amt = a > 0 ? a : info.pack;
+    addLeftover(k, amt, addDays(today(), Math.min(info.shelf, 5))); save("state"); toast(`${info.name} gemerkt`); render();
+  }
+  if (e.target.id === "editor") saveEditor();
+});
+
+/* ---------- Start ---------- */
+(function boot() {
+  for (const name of Object.keys(docs)) { const d = lsGet(name); if (d) applyDoc(name, d); }
+  const t = today();
+  S.leftovers = S.leftovers.filter(l => diffDays(t, l.until) > -3);
+  render();
+  if (window.claude) initCloud(); else setTimeout(initCloud, 600);
+  loadFileRecipes();
+})();
+</script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
+</body></html>
